@@ -1,10 +1,10 @@
-# AGENTS.md — Local Community Platform
+# AGENTS.md — Braga AI Builders downstream
 
 ## Project
 
-This repository is the theme-neutral open-source platform used by Braga AI Builders and designed for forks by any local or interest-based community. Braga AI Builders is the reference deployment; AI is not a requirement of the software.
+This repository is the Braga-specific downstream deployment of [`richkapp/local-community-platform`](https://github.com/richkapp/local-community-platform). Its protected `main` branch is the source for the live Braga AI Builders Vercel deployment.
 
-This repository is the canonical upstream. The live Braga deployment is maintained separately at `richkapp/braga-ai-builders` and receives upstream changes only through reviewed sync pull requests. Braga-specific experiments belong downstream; only generalized, configurable features belong here.
+Braga-specific features and experiments belong here. Reusable community-platform features should be generalized and proposed to the canonical upstream, then synced back through a reviewed downstream pull request. Do not merge this repository's entire `main` branch upstream.
 
 Core scope:
 
@@ -27,6 +27,7 @@ Core scope:
 - Vercel is the supported frontend host for v0.1.x. Other adapters require an explicit configuration change.
 - `src/config/community.ts` is the single source for public community identity, theme language, and links.
 - `supabase/migrations/` is the source of truth for schema, grants, RLS, views, and RPCs.
+- `origin` is the Braga downstream repository; `upstream` is Local Community Platform.
 - Every installation owns separate provider accounts, projects, credentials, and member data.
 
 ## Product and security rules
@@ -55,10 +56,11 @@ bun run verify
 ## Delivery
 
 - Use feature branches and pull requests; do not push application work directly to `main`.
-- Keep upstream changes theme-neutral. Do not merge Braga's downstream `main` into this repository.
-- When promoting a Braga-born feature upstream, remove Braga assumptions, add generic configuration and safe defaults, and document the reusable community problem.
+- Sync upstream on a `sync/upstream-*` branch, preserve intentional Braga configuration, run verification, and merge through a pull request.
+- When promoting a Braga-born feature upstream, create a focused branch from upstream `main`, remove Braga assumptions, add generic configuration and safe defaults, and document the reusable community problem.
 - Treat optional external services as disabled until each installation supplies its own configuration.
 - `bun run verify` is the required merge gate.
 - Keep contributor and self-hosting docs aligned with environment, schema, or deployment changes.
+- A Git sync does not apply Supabase migrations, Vault values, or provider configuration; review and execute those separately.
 - Verify deployed routes and authorization boundaries before reporting a release complete.
 - Production email tests require explicit approval and a controlled deliverable inbox; never use disposable or non-deliverable addresses.
