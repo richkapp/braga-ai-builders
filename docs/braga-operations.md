@@ -2,6 +2,8 @@
 
 This repository owns the live Braga AI Builders application. It shares history with Local Community Platform through the `braga-split-2026-07-12` tag, then evolves as a reviewed downstream.
 
+GitHub does not support creating a differently named fork under the same owner. Braga is therefore a separate repository with shared history and an explicit `upstream` remote rather than a GitHub network fork.
+
 ## Repository remotes
 
 A Braga checkout should have:
@@ -57,3 +59,13 @@ After the canonical implementation merges, sync upstream back into Braga. This k
 ## Production boundary
 
 The Braga Vercel project must remain connected to `richkapp/braga-ai-builders` with `main` as its production branch. Local Community Platform releases do not change the live Braga site until Braga merges a sync pull request.
+
+If the Vercel GitHub App uses selected-repository access, add `richkapp/braga-ai-builders` before reconnecting the project. Do not broaden the installation to unrelated repositories merely to make the connection work.
+
+## Verifying a repository or Vercel connection change
+
+1. Confirm the Vercel GitHub App can access `richkapp/braga-ai-builders` without broadening access to unrelated repositories.
+2. Connect the existing Braga Vercel project to this repository and keep the production domain and environment configuration on that project.
+3. Open a downstream pull request and require both `bun run verify` and a successful Vercel preview.
+4. Merge the pull request and confirm Vercel reports a production deployment sourced from downstream `main`.
+5. Request `https://braga-ai-builders.vercel.app/` and require HTTP 200 before declaring the migration complete.
