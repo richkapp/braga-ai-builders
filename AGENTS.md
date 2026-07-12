@@ -28,6 +28,8 @@ Core scope:
 - `src/config/community.ts` is the single source for public community identity, theme language, and links.
 - `supabase/migrations/` is the source of truth for schema, grants, RLS, views, and RPCs.
 - `origin` is the Braga downstream repository; `upstream` is Local Community Platform.
+- This is a separate shared-history repository, not a GitHub network fork. GitHub does not support creating a differently named fork under the same owner.
+- The Braga Vercel project must stay connected to this downstream repository. When the Vercel GitHub App uses selected-repository access, grant access to this repository before changing the connection.
 - Every installation owns separate provider accounts, projects, credentials, and member data.
 
 ## Product and security rules
@@ -62,5 +64,6 @@ bun run verify
 - `bun run verify` is the required merge gate.
 - Keep contributor and self-hosting docs aligned with environment, schema, or deployment changes.
 - A Git sync does not apply Supabase migrations, Vault values, or provider configuration; review and execute those separately.
+- After repository or deployment-source changes, prove the connection with a downstream pull request, a successful Vercel preview, a successful production deployment from downstream `main`, and an HTTP check of the public site.
 - Verify deployed routes and authorization boundaries before reporting a release complete.
 - Production email tests require explicit approval and a controlled deliverable inbox; never use disposable or non-deliverable addresses.

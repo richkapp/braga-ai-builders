@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Repository and deployment separation:
+
+- Established `richkapp/braga-ai-builders` as the protected Braga-specific downstream while preserving shared Git history with Local Community Platform.
+- Kept `richkapp/local-community-platform` as the canonical upstream and documented how Braga experiments are generalized, proposed upstream, and synced back through reviewed pull requests.
+- Reconnected the existing Braga Vercel project to downstream `main` and verified both preview and production deployments from the new source repository.
+- Added only the downstream repository to the Vercel GitHub App's selected-repository access; no production credentials or Supabase data moved into GitHub.
+
 ## 0.1.2 — 2026-07-11
 
 Theme-neutral repository identity and configuration:
