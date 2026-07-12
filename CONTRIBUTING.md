@@ -4,11 +4,11 @@ Thanks for helping local and interest-based communities keep their knowledge, pe
 
 ## Choose the right repository
 
-This repository is the canonical, theme-neutral upstream. Changes here should solve a reusable community-platform problem and avoid Braga-specific copy, policy, or operational assumptions.
+This repository is the Braga-specific downstream deployment. Open Braga experiments, content, policy, and production changes here.
 
-Braga AI Builders is maintained in [`richkapp/braga-ai-builders`](https://github.com/richkapp/braga-ai-builders). Build Braga-only experiments there first. When one proves broadly useful, generalize it, make installation-level choices configurable, and open a focused pull request here. Do not merge the entire Braga downstream branch upstream.
+Reusable community-platform changes belong in [`richkapp/local-community-platform`](https://github.com/richkapp/local-community-platform). A feature may be proven in Braga first, but it must be generalized, made configurable, tested, and documented before being proposed upstream. Do not merge Braga's entire `main` branch into the platform.
 
-See [Upstream and Braga downstream](docs/upstream-downstream.md) for feature ownership, optional-feature rules, and the sync workflow.
+See [Upstream and Braga downstream](docs/upstream-downstream.md) for feature ownership, promotion, and synchronization.
 
 ## Before opening a pull request
 

@@ -1,10 +1,10 @@
-# Local Community Platform
+# Braga AI Builders
 
-An open-source platform that gives local and interest-based communities a durable home for ideas, resources, perspectives, member profiles, and community-shaped events without losing everything in chat.
+This is the Braga-specific downstream deployment of [Local Community Platform](https://github.com/richkapp/local-community-platform), an open-source platform for local and interest-based communities. The live community is at [braga-ai-builders.vercel.app](https://braga-ai-builders.vercel.app).
 
-[Braga AI Builders](https://braga-ai-builders.vercel.app) is the reference deployment. AI is that community's theme, not a requirement of the software. A neighborhood association, creative collective, professional network, book club, mutual-aid group, or any other community can configure the same platform around its own identity and purpose.
+Braga can develop community-specific features here without automatically adding them to the canonical platform. Reusable features should be generalized and proposed upstream; upstream releases reach Braga only through reviewed sync pull requests. See [Upstream and Braga downstream](docs/upstream-downstream.md).
 
-Local Community Platform is the canonical upstream repository. Braga is maintained in a [separate downstream repository](https://github.com/richkapp/braga-ai-builders), so platform development does not automatically change the live Braga community. Reusable Braga-born features can be generalized and proposed upstream; Braga receives upstream releases through reviewed sync pull requests. See [Upstream and Braga downstream](docs/upstream-downstream.md).
+Braga AI Builders is for people actively using AI—from everyday ChatGPT users to advanced builders and everyone in between.
 
 ## What it includes
 
@@ -86,6 +86,7 @@ bun run verify   # complete verification gate
 
 ## Documentation
 
+- [Braga downstream operations](docs/braga-operations.md)
 - [Self-hosting](docs/self-hosting.md)
 - [Upstream and Braga downstream](docs/upstream-downstream.md)
 - [Local development](docs/local-development.md)
