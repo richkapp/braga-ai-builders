@@ -8,7 +8,7 @@ Braga-specific features and experiments belong here. Reusable community-platform
 
 Core scope:
 
-- configurable community-access, passwordless email magic-link authentication;
+- rolling member invitation URLs, constrained admin invitation campaigns, and passwordless email magic-link authentication;
 - member profiles, settings, and a public-safe member directory;
 - public posts with upvote-only voting, categories, and tags;
 - external community event pages;

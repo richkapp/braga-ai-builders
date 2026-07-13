@@ -27,7 +27,7 @@ This release closes the independent security and fork-readiness review findings 
 - Bun and every direct dependency are pinned to the versions tested by CI.
 - CI and documentation use frozen-lockfile installs.
 - Vercel is the supported v0.1.x frontend host; the canonical site derives from `PUBLIC_SITE_URL`.
-- `.env.example` includes `IDEA_SIGNUP_INVITE_CODE`, which must match an active invite row.
+- The v0.1.1 baseline used a reusable Posts signup code; rolling invitations in migration `023` retire that path.
 - Historical dogfood findings are explicitly labeled as a pre-fix baseline.
 - Security and architecture documentation now describe external RSVP and the current access model.
 

@@ -57,17 +57,17 @@ describe('launch frontend contracts', () => {
     const profile = await read('src/components/profile/ProfileForm.tsx');
     expect(composer).not.toContain('AuthRequired');
     expect(composer).toContain('Post anonymously');
-    expect(composer).toContain('Create account and post');
+    expect(composer).toContain('Already a member? Sign in and attach my profile');
     expect(composer).toContain('Post with my profile');
     expect(composer).toContain('Add a post');
     expect(composer).toContain('Share an idea, resource, or perspective with the community.');
     expect(composer).not.toContain('Add a RIP');
     expect(composer).toContain('RipTaxonomyPicker');
     expect(draft).toContain('braga-idea-draft-v1');
-    expect(draft).toContain("context: 'ideas'");
+    expect(draft).toContain("context: 'signin'");
     expect(callback).toContain("'/ideas?restoreIdea=1'");
     expect(votes).not.toContain('No account needed');
-    expect(feed).toContain('Sign in or create an account with a magic link');
+    expect(feed).toContain('Already a member? Sign in with a magic link');
     expect(feed).toContain('Next event:');
     expect(feed).toContain('RIP_CATEGORIES');
     expect(feed).toContain('RIP_TAGS');
@@ -128,8 +128,10 @@ describe('launch frontend contracts', () => {
     expect(home).not.toContain('How to join');
     expect(authStatus).not.toContain('Use private invite');
     expect(authStatus).toContain('Sign In');
-    expect(members).toContain('Become a Member');
-    expect(members).toContain('memberInvitePath');
+    expect(members).toContain('Join WhatsApp Community');
+    expect(members).toContain('communityConfig.whatsappUrl');
+    expect(config).not.toContain('memberInviteCode');
+    expect(config).not.toContain('memberInvitePath');
     expect(footer).toContain('This site is powered by');
     expect(footer).toContain('Local Community Platform');
     expect(footer).toContain('an open-source platform for local communities.');
@@ -159,21 +161,54 @@ describe('launch frontend contracts', () => {
     expect(client).toContain('getBugReportVisitorId');
   });
 
-  test('sign in and account creation use one clearly explained magic-link flow', async () => {
+  test('existing-member sign in stays separate from invited account creation', async () => {
     const page = await read('src/pages/signin.astro');
     const form = await read('src/components/auth/InviteEmailForm.tsx');
+    const magicLink = await read('src/lib/magicLink.ts');
     const composer = await read('src/components/ideas/IdeaComposer.tsx');
-    expect(page).toContain('Sign in or create your account');
-    expect(page).toContain('If you already have an account, it signs you in');
-    expect(form).toContain('No password and no separate signup');
+    const edge = await read('supabase/functions/request-invite-magic-link/index.ts');
+    expect(page).toContain('Existing member sign in');
+    expect(page).toContain('mode="signin"');
+    expect(page).not.toContain('memberInviteCode');
+    expect(form).toContain("{ mode: 'invite'; code: string } | { mode: 'signin'; code?: never }");
+    expect(form).toContain('requestMagicLink');
+    expect(magicLink).toContain('/functions/v1/request-invite-magic-link');
     expect(form).toContain('Email me a magic link');
-    expect(form).toContain('I agree to receive a one-time login or signup link sent through Supabase.');
+    expect(form).toContain('I agree to receive a one-time magic-link email sent through Supabase.');
     expect(form).toContain('My email address will never be used for marketing.');
     expect(form).toContain('emailConsent: true');
     expect(form).toContain('required');
-    expect(composer).toContain('I agree to receive a one-time login or signup link sent through Supabase.');
+    expect(composer).toContain('Already a member? Sign in and attach my profile');
+    expect(composer).not.toContain('Create account and post');
+    expect(composer).toContain('I agree to receive a one-time magic-link email sent through Supabase.');
     expect(composer).toContain('My email address will never be used for marketing.');
     expect(composer).toContain('emailBusy || !emailConsent');
+    expect(edge).toContain("payload.context === 'signin'");
+    expect(edge).toContain('create_user: false');
+    expect(edge).toContain('If that email belongs to a member, a sign-in link is on its way.');
+    expect(edge).not.toContain('IDEA_SIGNUP_INVITE_CODE');
+  });
+
+  test('member settings expose five rolling shareable invitation URLs', async () => {
+    const settings = await read('src/pages/settings.astro');
+    const component = await read('src/components/invites/MemberInvitePool.tsx');
+    const invites = await read('src/lib/invites.ts');
+    const callback = await read('src/components/auth/AuthCallback.tsx');
+    expect(settings).toContain('MemberInvitePool');
+    expect(settings).toContain('<MemberInvitePool client:load />');
+    expect(component).toContain('Invite friends');
+    expect(component).toContain('navigator.share');
+    expect(component).toContain('Copy link');
+    expect(component).toContain('Available');
+    expect(component).toContain('Pending');
+    expect(component).toContain('Recently joined');
+    expect(component).toContain('requestSequence.current');
+    expect(component).toContain("document.visibilityState === 'visible'");
+    expect(invites).toContain("rpc('get_my_member_invites'");
+    expect(callback).toContain("rpc('claim_my_pending_invite'");
+    expect(callback).toContain("inviteFlow !== 'rolling_v1'");
+    expect(callback).toContain('if (!recentlyCreated) return');
+    expect(callback).toContain("console.error('[invite-claim-backup]'");
   });
 
   test('profile directory visibility is a prominent first setting', async () => {
@@ -197,6 +232,7 @@ describe('launch frontend contracts', () => {
     const admin = await read('src/components/admin/AdminDashboard.tsx');
     const manager = await read('src/components/admin/BugReportManager.tsx');
     const members = await read('src/components/admin/MemberManager.tsx');
+    const invites = await read('src/components/admin/InviteManager.tsx');
     const adminLib = await read('src/lib/admin.ts');
     expect(admin).not.toContain('registrations');
     expect(admin).toContain("key: 'bug-reports'");
@@ -214,5 +250,13 @@ describe('launch frontend contracts', () => {
     expect(adminLib).toContain("rpc('super_admin_set_member_role'");
     expect(adminLib).toContain("rpc('super_admin_set_member_suspension'");
     expect(adminLib).toContain("rpc('super_admin_delete_member'");
+    expect(invites).toContain('max="50"');
+    expect(invites).toContain('min="1"');
+    expect(invites).toContain('1–50 uses');
+    expect(invites).toContain('Member invite links');
+    expect(invites).toContain('Replace link');
+    expect(adminLib).toContain("rpc('create_admin_invite'");
+    expect(adminLib).toContain("rpc('revoke_admin_invite'");
+    expect(adminLib).toContain("rpc('list_member_invites_for_admin'");
   });
 });

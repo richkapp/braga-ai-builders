@@ -5,7 +5,7 @@ import type { RipCategory, RipTag } from '@/lib/types';
 import { toUserMessage } from '@/lib/errors';
 import { useAuthUser } from '@/components/auth/useAuthUser';
 import { isAnonymousUser } from '@/lib/anonymous';
-import { clearIdeaDraft, loadIdeaDraft, requestIdeaAccount, saveIdeaDraft } from '@/lib/ideaDraft';
+import { clearIdeaDraft, loadIdeaDraft, requestIdeaSignIn, saveIdeaDraft } from '@/lib/ideaDraft';
 import RipTaxonomyPicker from './RipTaxonomyPicker';
 import { communityConfig } from '@/config/community';
 
@@ -68,13 +68,13 @@ export default function IdeaComposer() {
     }
   }
 
-  function startAccountFlow() {
+  function startSignInFlow() {
     saveIdeaDraft(title.trim(), body.trim(), category, tags);
     setEmailConsent(false);
     setDialog('email');
   }
 
-  async function sendAccountLink(event: FormSubmitEvent) {
+  async function sendSignInLink(event: FormSubmitEvent) {
     event.preventDefault(); setMessage('');
     if (!emailConsent) {
       setMessage('Please agree to receive the one-time magic-link email.');
@@ -83,10 +83,10 @@ export default function IdeaComposer() {
     setEmailBusy(true);
     try {
       saveIdeaDraft(title.trim(), body.trim(), category, tags);
-      await requestIdeaAccount(email);
+      await requestIdeaSignIn(email);
       setDialog('sent');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not send the account link.');
+      setMessage(error instanceof Error ? error.message : 'Could not send the sign-in link.');
     } finally { setEmailBusy(false); }
   }
 
@@ -109,24 +109,24 @@ export default function IdeaComposer() {
           <section className="card w-full max-w-md p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="idea-dialog-title">
             {dialog === 'choice' && <>
               <h2 id="idea-dialog-title" className="text-2xl font-black text-white">How should this post appear?</h2>
-              <p className="mt-3 text-sm leading-6 text-braga-100">{signedIn ? 'Choose whether to attach your member profile.' : 'You can post now without an account, or use a magic link to create one.'}</p>
+              <p className="mt-3 text-sm leading-6 text-braga-100">{signedIn ? 'Choose whether to attach your member profile.' : 'You can post now without an account. Existing members can sign in to attach their profile.'}</p>
               <div className="mt-6 grid gap-3">
                 <button type="button" className="btn-primary" onClick={() => void post('anonymous')}>Post anonymously</button>
                 {signedIn
                   ? <button type="button" className="btn-secondary" onClick={() => void post('account')}>Post with my profile</button>
-                  : <button type="button" className="btn-secondary" onClick={startAccountFlow}>Create account and post</button>}
+                  : <button type="button" className="btn-secondary" onClick={startSignInFlow}>Already a member? Sign in and attach my profile</button>}
                 <button type="button" className="px-4 py-2 text-sm text-braga-200 hover:text-white" onClick={() => setDialog(null)}>Cancel</button>
               </div>
             </>}
 
-            {dialog === 'email' && <form onSubmit={sendAccountLink}>
-              <h2 id="idea-dialog-title" className="text-2xl font-black text-white">Sign in or create your account</h2>
-              <p className="mt-3 text-sm leading-6 text-braga-100">It is the same passwordless process. Your post is saved in this browser while we email you a one-time magic link.</p>
+            {dialog === 'email' && <form onSubmit={sendSignInLink}>
+              <h2 id="idea-dialog-title" className="text-2xl font-black text-white">Existing member sign in</h2>
+              <p className="mt-3 text-sm leading-6 text-braga-100">Your post is saved in this browser while we email your existing member account a one-time magic link.</p>
               <label className="label mt-6 block" htmlFor="idea-email">Email address</label>
               <input id="idea-email" className="input mt-2" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required autoFocus />
               <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-braga-300/20 bg-white/[0.025] p-4 text-sm leading-6 text-braga-100">
                 <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-limewash" checked={emailConsent} onChange={(event) => setEmailConsent(event.target.checked)} required disabled={emailBusy} />
-                <span>I agree to receive a one-time login or signup link sent through Supabase. My email address will never be used for marketing.</span>
+                <span>I agree to receive a one-time magic-link email sent through Supabase. My email address will never be used for marketing.</span>
               </label>
               <div className="mt-6 grid gap-3"><button className="btn-primary" disabled={emailBusy || !emailConsent}>{emailBusy ? 'Sending…' : 'Email me the magic link'}</button><button type="button" className="px-4 py-2 text-sm text-braga-200 hover:text-white" onClick={() => setDialog('choice')}>Back</button></div>
               {message && <p className="error-message mt-4" role="alert">{message}</p>}
@@ -134,7 +134,7 @@ export default function IdeaComposer() {
 
             {dialog === 'sent' && <>
               <h2 id="idea-dialog-title" className="text-2xl font-black text-white">Check your email</h2>
-              <p className="mt-3 leading-7 text-braga-100">Open the newest {communityConfig.name} magic link. It creates or signs into your account, then returns you here with the post restored.</p>
+              <p className="mt-3 leading-7 text-braga-100">If that email belongs to a {communityConfig.name} member, open the newest magic link to sign in and return here with the post restored.</p>
               <button type="button" className="btn-primary mt-6 w-full" onClick={() => setDialog(null)}>Done</button>
             </>}
           </section>

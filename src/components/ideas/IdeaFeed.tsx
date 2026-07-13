@@ -123,7 +123,7 @@ export default function IdeaFeed() {
   return (
     <div className="space-y-5">
       <aside className="rounded-2xl border border-braga-300/20 bg-braga-950/45 p-5" aria-label="Post participation information">
-        <div className="flex gap-3"><LuInfo className="mt-0.5 h-5 w-5 shrink-0 text-limewash" aria-hidden="true" /><div className="space-y-2 text-sm leading-6 text-braga-100"><p>You can post and vote without an account. Want your posts tied to your profile and editable? <a className="font-semibold text-limewash hover:underline" href="/signin">Sign in or create an account with a magic link →</a></p>{nextEvent && <p><span className="font-semibold text-white">Next event:</span> {formatEventDate(nextEvent.starts_at)} · <a className="font-semibold text-limewash hover:underline" href={nextEvent.external_url || '/events'} target="_blank" rel="noreferrer noopener">{nextEvent.title} ↗</a></p>}</div></div>
+        <div className="flex gap-3"><LuInfo className="mt-0.5 h-5 w-5 shrink-0 text-limewash" aria-hidden="true" /><div className="space-y-2 text-sm leading-6 text-braga-100"><p>You can post and vote without an account. Want your posts tied to your profile and editable? <a className="font-semibold text-limewash hover:underline" href="/signin">Already a member? Sign in with a magic link →</a></p>{nextEvent && <p><span className="font-semibold text-white">Next event:</span> {formatEventDate(nextEvent.starts_at)} · <a className="font-semibold text-limewash hover:underline" href={nextEvent.external_url || '/events'} target="_blank" rel="noreferrer noopener">{nextEvent.title} ↗</a></p>}</div></div>
       </aside>
 
       <section className="space-y-4 rounded-2xl border border-braga-300/15 p-5" aria-label="Filter posts">

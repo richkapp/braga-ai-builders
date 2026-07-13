@@ -1,4 +1,4 @@
-import { supabaseAnonKey, supabaseUrl } from './supabase';
+import { requestMagicLink } from './magicLink';
 import { normalizeRipTags, RIP_CATEGORIES } from './rips';
 import type { RipCategory, RipTag } from './types';
 
@@ -32,13 +32,7 @@ export function clearIdeaDraft() {
   if (typeof window !== 'undefined') window.localStorage.removeItem(draftKey);
 }
 
-export async function requestIdeaAccount(email: string) {
-  const response = await fetch(`${supabaseUrl}/functions/v1/request-invite-magic-link`, {
-    method: 'POST',
-    headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: email.trim().toLowerCase(), context: 'ideas', emailConsent: true })
-  });
-  const body = await response.json().catch(() => ({})) as { error?: string; message?: string };
-  if (!response.ok) throw new Error(body.error || 'Could not send the account link.');
-  return body.message || 'Check your email to finish sharing your post.';
+export async function requestIdeaSignIn(email: string) {
+  const body = await requestMagicLink({ email, context: 'signin', next: '/ideas', emailConsent: true });
+  return body.message || 'If that email belongs to a member, check it for your sign-in link.';
 }

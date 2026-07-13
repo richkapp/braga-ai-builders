@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+Rolling member invitations:
+
+- Replaced the public reusable account-creation route with private URLs shared directly through WhatsApp, Facebook, Signal, or any other channel, and revoked legacy reusable codes during migration.
+- Added a rolling pool of five unique single-use links to every active member's Settings; each confirmed new member atomically triggers one replacement link.
+- Added available, pending, and recently used states with copy, native share, refresh, and automatic polling.
+- Kept admins on the same personal five-link pool while adding separate admin campaign links with database-enforced capacities from 1 to 50, optional custom slugs, expiry, usage reporting, and revocation; admins can also inspect and replace leaked member-owned links.
+- Separated existing-member sign-in from invited account creation and stopped anonymous Posts from creating uninvited accounts.
+- Changed invite capacity so clicks and email delivery do not consume a link; only a newly confirmed member account does.
+
 Repository and deployment separation:
 
 - Established `richkapp/braga-ai-builders` as the protected Braga-specific downstream while preserving shared Git history with Local Community Platform.
