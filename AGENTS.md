@@ -64,6 +64,9 @@ bun run verify
 - `bun run verify` is the required merge gate.
 - Keep contributor and self-hosting docs aligned with environment, schema, or deployment changes.
 - A Git sync does not apply Supabase migrations, Vault values, or provider configuration; review and execute those separately.
+- Treat applied production migrations as immutable and ship corrections in the next numbered forward migration.
+- Verify production authorization with affected-row counts and readback because an RLS-denied update may return no API error and zero rows.
+- Prefer rollback-only database smoke transactions over creating temporary production accounts; production email tests still require explicit approval and a controlled inbox.
 - After repository or deployment-source changes, prove the connection with a downstream pull request, a successful Vercel preview, a successful production deployment from downstream `main`, and an HTTP check of the public site.
 - Verify deployed routes and authorization boundaries before reporting a release complete.
 - Production email tests require explicit approval and a controlled deliverable inbox; never use disposable or non-deliverable addresses.

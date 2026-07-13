@@ -23,6 +23,14 @@
 - Only super admins can assign or remove admin access, suspend or restore members, and permanently delete member accounts. The RPC boundary blocks self-management and changes to another super-admin account.
 - Visitors can read only published or explicitly public data.
 
+## Production database change verification
+
+- Treat every applied migration as immutable. Production corrections use the next numbered forward migration; never rewrite an already-applied file.
+- Braga production keeps Supabase Anonymous Sign-Ins disabled. Public anonymous posts and upvotes continue through the reviewed Edge Function rather than anonymous Auth users.
+- After deploying a migration, verify indexes, function bodies, and grants with read-only catalog queries in addition to checking application routes.
+- RLS-denied updates can return a successful response with zero affected rows. Authorization smoke tests must assert the returned row count and read the protected row back instead of relying only on an API error.
+- Prefer rollback-only SQL transactions with locally scoped test claims for production concurrency checks. Do not create disposable or non-deliverable test accounts, and do not send authentication email during database verification.
+
 ## Invite abuse controls
 
 Member invitations are cryptographically random and single-use. Every active member has five unconsumed URLs; confirmation consumes one and replenishes one inside the same locked database transaction. Delivery creates a temporary pending reservation, while clicks, failed delivery, and existing-member sign-in do not consume capacity. Suspended inviters' links stop working.
