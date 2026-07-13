@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { fetchMyProfile, updateMyProfile } from '@/lib/profile';
 import { toUserMessage } from '@/lib/errors';
@@ -24,25 +24,60 @@ const emptyProfile: Partial<EditableProfile> = {
 
 export default function ProfileForm() {
   const { user, loading: authLoading } = useAuthUser();
+  const userId = user?.id ?? null;
+  const userIsAnonymous = isAnonymousUser(user);
+  const profileIdentity = userId && !userIsAnonymous ? userId : null;
+  const identityGenerationRef = useRef(0);
   const [profile, setProfile] = useState<Partial<EditableProfile>>(emptyProfile);
+  const [profileOwnerId, setProfileOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let active = true;
+    const generation = identityGenerationRef.current + 1;
+    identityGenerationRef.current = generation;
+    const isCurrentIdentity = () => active && identityGenerationRef.current === generation;
     if (authLoading) return;
-    if (!user || isAnonymousUser(user)) {
+    if (!profileIdentity) {
+      setProfile(emptyProfile);
+      setProfileOwnerId(null);
+      setSaving(false);
+      setMessage('');
+      setError('');
       setLoading(false);
       return;
     }
 
     setLoading(true);
+    setProfile(emptyProfile);
+    setProfileOwnerId(null);
+    setSaving(false);
+    setMessage('');
+    setError('');
     fetchMyProfile()
-      .then((data) => setProfile(data))
-      .catch((caught) => setError(toUserMessage('profile-load', caught)))
-      .finally(() => setLoading(false));
-  }, [authLoading, user]);
+      .then((data) => {
+        if (isCurrentIdentity() && data.id === profileIdentity) {
+          setProfile(data);
+          setProfileOwnerId(profileIdentity);
+        }
+      })
+      .catch((caught) => {
+        if (isCurrentIdentity()) {
+          setProfileOwnerId(profileIdentity);
+          setError(toUserMessage('profile-load', caught));
+        }
+      })
+      .finally(() => {
+        if (isCurrentIdentity()) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, profileIdentity]);
 
   function setField<K extends keyof EditableProfile>(key: K, value: EditableProfile[K]) {
     setProfile((current) => ({ ...current, [key]: value }));
@@ -50,11 +85,16 @@ export default function ProfileForm() {
 
   async function submit(event: FormSubmitEvent) {
     event.preventDefault();
+    const submittingIdentity = profileOwnerId;
+    if (!submittingIdentity || submittingIdentity !== profileIdentity) return;
+    const submittingGeneration = identityGenerationRef.current;
+    const isCurrentIdentity = () => identityGenerationRef.current === submittingGeneration;
+
     setSaving(true);
     setMessage('');
     setError('');
     try {
-      const saved = await updateMyProfile({
+      const saved = await updateMyProfile(submittingIdentity, {
         handle: profile.handle?.trim().toLowerCase() || null,
         display_name: profile.display_name?.trim() || 'New builder',
         bio: profile.bio?.trim() || '',
@@ -65,17 +105,19 @@ export default function ProfileForm() {
         avatar_url: profile.avatar_url || null,
         is_public: Boolean(profile.is_public)
       });
+      if (!isCurrentIdentity() || saved.id !== submittingIdentity) return;
       setProfile(saved);
       setMessage('Profile saved.');
     } catch (caught) {
-      setError(toUserMessage('profile-save', caught));
+      if (isCurrentIdentity()) setError(toUserMessage('profile-save', caught));
     } finally {
-      setSaving(false);
+      if (isCurrentIdentity()) setSaving(false);
     }
   }
 
-  if (authLoading || loading) return <p className="card p-6 text-braga-100" role="status">Loading profile…</p>;
-  if (!user || isAnonymousUser(user)) return <AuthRequired title="Join the community to create a member profile" message="Ideas work without an account. Use a private invite when you want a member profile or event access." />;
+  if (authLoading) return <p className="card p-6 text-braga-100" role="status">Loading profile…</p>;
+  if (!profileIdentity) return <AuthRequired title="Join the community to create a member profile" message="Ideas work without an account. Use a private invite when you want a member profile or event access." />;
+  if (loading || profileOwnerId !== profileIdentity) return <p className="card p-6 text-braga-100" role="status">Loading profile…</p>;
   if (error && !profile.display_name) return <p className="error-message" role="alert">{error}</p>;
 
   return (

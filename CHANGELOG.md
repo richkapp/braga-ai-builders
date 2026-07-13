@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+Profile settings:
+
+- Kept unsaved profile edits intact when Supabase refreshes the same member's authentication session after switching browser tabs.
+- Bound profile loads and saves to the account that initiated them so delayed responses or account switches cannot overwrite another member's profile state.
+
 Member-created post tags:
 
 - Added a shared tag catalog ranked by usage, with six-tag collapsed views and expandable catalogs in the post composer and feed filters.
