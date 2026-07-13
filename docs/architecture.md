@@ -8,6 +8,7 @@ Braga AI Builders uses a server-rendered Astro app with React islands for intera
 - `invites`: system bootstrap links, rolling member-owned single-use URLs, and 1–50-use admin campaign URLs.
 - `invite_redemptions`: private delivery, pending-confirmation, capacity, and confirmed-member audit records.
 - `ideas`: public posts; stable anonymous visitor identifiers are never granted through the public Data API.
+- `post_tags`: private shared tag registry seeded with the original tags. Public-safe catalog and active-member creation use narrow RPCs; categories remain fixed on `ideas`.
 - `idea_votes`: one upvote per authenticated or Edge-Function-managed visitor identity.
 - `idea_bookmarks`: private, unique member-to-post bookmarks with cascading cleanup when either account or post is deleted; clients use constrained RPCs rather than direct table access.
 - `events`: organizer-managed public listings that link to external RSVP pages.
@@ -26,4 +27,4 @@ Every active member, including admins, gets five current single-use URLs through
 
 ## Public data boundary
 
-Public pages may read published events, non-hidden posts, aggregate upvote counts, and opted-in profile fields. The Data API excludes private emails, invite data, bookmarks, stable anonymous visitor IDs, attendee counts, and admin-only member fields. RLS and explicit grants both enforce these boundaries.
+Public pages may read published events, non-hidden posts, aggregate upvote counts, the public-safe popularity-ranked tag catalog, and opted-in profile fields. The Data API excludes private emails, invite data, bookmark rows, tag-creator IDs, stable anonymous visitor IDs, attendee counts, and admin-only member fields. RLS and explicit grants both enforce these boundaries.

@@ -16,6 +16,8 @@
 - Visitors can create anonymous posts and upvotes only through the origin-checked Edge Function.
 - Public post reads expose only a safe per-viewer edit capability; underlying author and anonymous visitor IDs remain private.
 - Member bookmarks are private account state exposed only through narrow relationship and idempotent desired-state RPCs; clients have no direct bookmark-table privileges.
+- Post tags live in a private registry. Anyone may call the public-safe catalog RPC, but only active non-anonymous members may create tags, and each account is transactionally limited to three historical custom-tag rows.
+- Clients have no direct tag-table privileges. A database trigger requires every member or anonymous post write to use at most six distinct registered tags, and the Edge Function's anonymous post RPC repeats that validation.
 - Events are public listings that send RSVP traffic to external event pages.
 - Legacy event-registration tables and functions are not part of the user-facing product and attendee counts are not public.
 - Members can read only their own five-link invitation pool through a constrained RPC. Organizers can inspect and replace current member-owned links, create campaign invites, manage events, moderate post lifecycle state, triage bug reports, and read the full member directory.

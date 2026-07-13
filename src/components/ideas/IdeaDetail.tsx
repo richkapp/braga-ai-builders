@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toUserMessage } from '@/lib/errors';
 import { attachPublicAuthors, getMyPostRelationships } from '@/lib/ideas';
@@ -9,11 +9,14 @@ import type { Idea } from '@/lib/types';
 import UpvoteButton from './UpvoteButton';
 import PostAuthorPreview from './PostAuthorPreview';
 import BookmarkButton, { type BookmarkAccess } from './BookmarkButton';
+import { usePostTagCatalog } from './usePostTagCatalog';
 
 type Props = { slug: string };
 type VoteCountRow = { upvote_count: number };
 
 export default function IdeaDetail({ slug }: Props) {
+  const { tags: tagCatalog } = usePostTagCatalog();
+  const tagLabels = useMemo(() => new Map(tagCatalog.map((tag) => [tag.slug, tag.label])), [tagCatalog]);
   const [idea, setIdea] = useState<Idea | null>(null);
   const [bookmarkAccess, setBookmarkAccess] = useState<BookmarkAccess>('signed-out');
   const [loading, setLoading] = useState(true);
@@ -90,7 +93,7 @@ export default function IdeaDetail({ slug }: Props) {
     <article className="card relative flex gap-5 p-6">
       <UpvoteButton ideaId={idea.id} initialCount={idea.upvote_count ?? 0} initialVoted={idea.viewer_has_voted ?? false} disabled={idea.status === 'closed'} />
       <div className="min-w-0 max-w-3xl pr-14">
-        <div className="flex flex-wrap gap-2"><span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">{ripCategoryLabel(idea.category)}</span>{idea.tags.map((tag) => <span key={tag} className="rounded-full border border-violet-300/25 bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-200">{ripTagLabel(tag)}</span>)}</div>
+        <div className="flex flex-wrap gap-2"><span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">{ripCategoryLabel(idea.category)}</span>{idea.tags.map((tag) => <span key={tag} className="rounded-full border border-violet-300/25 bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-200">{tagLabels.get(tag) ?? ripTagLabel(tag)}</span>)}</div>
         <p className="mt-4 text-xs uppercase tracking-[0.2em] text-braga-300">{idea.month_key}</p>
         <h1 className="mt-3 break-words text-4xl font-black text-white">{idea.title}</h1>
         <p className="mt-5 whitespace-pre-wrap break-words leading-8 text-braga-100">{idea.body}</p>

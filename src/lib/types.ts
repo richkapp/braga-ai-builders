@@ -25,7 +25,18 @@ export type EditableProfile = Pick<
 >;
 
 export type RipCategory = 'idea' | 'resource' | 'perspective';
-export type RipTag = 'next-event' | 'news' | 'community-challenge' | 'collaboration' | 'learning' | 'member-project';
+export type RipTag = string;
+
+export type PostTagCatalogItem = {
+  slug: RipTag;
+  label: string;
+  usage_count: number;
+  is_system: boolean;
+  viewer_created: boolean;
+  viewer_custom_tag_count: number;
+  viewer_custom_tag_limit: number;
+  viewer_is_active: boolean;
+};
 
 export type Idea = {
   id: string;

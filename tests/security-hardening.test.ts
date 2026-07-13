@@ -128,6 +128,7 @@ describe('delivery security contracts', () => {
 
   test('RIP categories and tags are constrained across direct and anonymous writes', async () => {
     const migration = await read('supabase/migrations/016_rip_categories_tags.sql');
+    const dynamicTags = await read('supabase/migrations/026_member_created_post_tags.sql');
     const edge = await read('supabase/functions/anonymous-ideas/index.ts');
     expect(migration).toContain("category in ('idea', 'resource', 'perspective')");
     expect(migration).toContain("'community-challenge'");
@@ -136,6 +137,22 @@ describe('delivery security contracts', () => {
     expect(migration).toContain('p_tags text[]');
     expect(edge).toContain('p_category: payload.category');
     expect(edge).toContain('p_tags: payload.tags');
+    expect(dynamicTags).toContain('create table public.post_tags');
+    expect(dynamicTags).toContain('create unique index post_tags_label_lower_idx');
+    expect(dynamicTags).toContain('revoke all on table public.post_tags from public, anon, authenticated');
+    expect(dynamicTags).toContain('create or replace function public.list_post_tags()');
+    expect(dynamicTags).toContain('create or replace function public.create_post_tag(p_label text)');
+    expect(dynamicTags).toContain('pg_advisory_xact_lock');
+    expect(dynamicTags).toContain('custom tag lifetime limit reached');
+    expect(dynamicTags).toContain('viewer_custom_tag_limit');
+    expect(dynamicTags).toContain('order by usage_count desc');
+    expect(dynamicTags).toContain('drop constraint if exists ideas_tags_allowed');
+    expect(dynamicTags).toContain('create trigger validate_idea_tags_before_write');
+    expect(dynamicTags).toContain('cardinality(new.tags) > 6');
+    expect(dynamicTags).toContain('from public.post_tags');
+    expect(dynamicTags).toContain('grant execute on function public.list_post_tags() to anon, authenticated');
+    expect(dynamicTags).toContain('grant execute on function public.create_post_tag(text) to authenticated');
+    expect(dynamicTags).not.toContain('grant select on table public.post_tags to authenticated');
   });
 
   test('post author hover cards expose only already-public profile fields', async () => {

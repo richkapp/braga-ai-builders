@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Member-created post tags:
+
+- Added a shared tag catalog ranked by usage, with six-tag collapsed views and expandable catalogs in the post composer and feed filters.
+- Let active members create up to three tags over the lifetime of their account, with duplicate protection, clear naming rules, and no delete-or-reset path.
+- Added category-plus-multiple-tag filtering while keeping categories fixed as Idea, Resource, and Perspective.
+- Replaced the fixed post-tag database allowlist with a private registry and narrow RPCs that validate both member and anonymous post writes.
+
 Member post library:
 
 - Reworked Settings into Profile, Invites, My posts, and My bookmarks pill tabs so members can reach each section without scrolling through unrelated forms.
