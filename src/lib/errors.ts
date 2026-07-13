@@ -10,7 +10,7 @@ export function toUserMessage(context: string, error: unknown): string {
       : '';
 
   if (/need to sign in|not authenticated|jwt/i.test(message)) {
-    return 'Use your private invite link to sign in first.';
+    return 'Sign in with your existing member account first.';
   }
 
   if (/duplicate|unique/i.test(message)) {
@@ -20,7 +20,7 @@ export function toUserMessage(context: string, error: unknown): string {
   }
 
   if (/invalid invite|expired|exhausted|revoked|cooldown|too many/i.test(message)) {
-    return 'This invite cannot be used right now. Ask an organizer for a current private link.';
+    return 'This invite cannot be used right now. Ask a member or organizer for a current link.';
   }
 
   const messages: Record<string, string> = {
@@ -36,10 +36,11 @@ export function toUserMessage(context: string, error: unknown): string {
     'member-profile': 'This member profile could not be loaded.',
     'profile-load': 'Your profile could not be loaded. Please refresh and try again.',
     'profile-save': 'Your profile could not be saved. Check the fields and try again.',
+    'invite-load': 'Your invitation links could not be loaded. Refresh and try again.',
     'admin-access': 'Admin access could not be checked. Please refresh and try again.',
     'admin-load': 'Organizer data could not be loaded. Please refresh and try again.',
     'admin-save': 'That organizer action could not be completed. Please try again.',
-    'auth-callback': 'This sign-in link is invalid or has expired. Request a new private link.'
+    'auth-callback': 'This sign-in link is invalid or has expired. Request a new sign-in or invitation link.'
   };
 
   return messages[context] ?? 'Something went wrong. Please refresh and try again.';

@@ -46,17 +46,20 @@ describe('delivery security contracts', () => {
     expect(sql).toContain("status = 'open'");
   });
 
-  test('invite delivery is reserved, completed, or failed explicitly', async () => {
-    const sql = await read('supabase/migrations/006_delivery_readiness.sql');
+  test('invite delivery is reserved, delivered, claimed, or failed explicitly', async () => {
+    const baseline = await read('supabase/migrations/006_delivery_readiness.sql');
+    const rolling = await read('supabase/migrations/023_rolling_member_invites.sql');
     const fn = await read('supabase/functions/request-invite-magic-link/index.ts');
-    expect(sql).toContain('reserve_invite_for_email');
-    expect(sql).toContain('complete_invite_redemption');
-    expect(sql).toContain('fail_invite_redemption');
+    expect(baseline).toContain('reserve_invite_for_email');
+    expect(rolling).toContain('mark_invite_delivery');
+    expect(rolling).toContain('claim_my_pending_invite');
+    expect(rolling).toContain('fail_invite_redemption');
     expect(fn).toContain('/rest/v1/rpc/reserve_invite_for_email');
-    expect(fn).toContain('/rest/v1/rpc/complete_invite_redemption');
+    expect(fn).toContain('/rest/v1/rpc/mark_invite_delivery');
     expect(fn).toContain('/rest/v1/rpc/fail_invite_redemption');
-    expect(fn).toContain("payload.context === 'ideas'");
-    expect(fn).toContain('IDEA_SIGNUP_INVITE_CODE');
+    expect(fn).toContain("payload.context === 'signin'");
+    expect(fn).toContain('create_user: false');
+    expect(fn).not.toContain('IDEA_SIGNUP_INVITE_CODE');
     expect(fn).toContain('payload.emailConsent !== true');
     expect(fn).toContain('You must agree to receive the one-time magic-link email.');
     expect(fn).not.toContain("'Access-Control-Allow-Origin': '*'");
@@ -144,6 +147,74 @@ describe('delivery security contracts', () => {
     expect(migration).toContain('profiles.github_url');
     expect(migration).toContain('profiles.x_url');
     expect(migration).not.toContain('auth.users');
+  });
+
+  test('rolling member invitations replenish atomically after confirmed account creation', async () => {
+    const migration = await read('supabase/migrations/023_rolling_member_invites.sql');
+    const edge = await read('supabase/functions/request-invite-magic-link/index.ts');
+    expect(migration).toContain("'member_single'");
+    expect(migration).toContain("'admin_campaign'");
+    expect(migration).toContain('max_uses = 1');
+    expect(migration).toContain('max_uses between 1 and 50');
+    expect(migration).toContain("set invite_kind = 'admin_campaign'");
+    expect(migration).toContain('with legacy_campaign_owner as');
+    expect(migration).toContain("i.code not in ('braga-whatsapp', 'local-development-only')");
+    expect(migration).toContain("where invite_kind = 'system'");
+    expect(migration).toContain('create or replace function public.replenish_member_invite_pool');
+    expect(migration).toContain('while active_invite_count < 5 loop');
+    expect(migration).toContain('pg_advisory_xact_lock');
+    expect(migration).toContain('create or replace function public.handle_member_profile_invites');
+    expect(migration).toContain('after insert on public.profiles');
+    expect(migration).toContain('and not coalesce(u.is_anonymous, false)');
+    expect(migration).toContain('perform public.replenish_member_invite_pool(member_record.id)');
+    expect(migration).toContain('create or replace function public.get_my_member_invites');
+    expect(migration).toContain('create or replace function public.claim_my_pending_invite');
+    expect(migration).toContain("current_flow is distinct from 'rolling_v1'");
+    expect(migration).toContain("current_created_at < now() - interval '5 minutes'");
+    expect(migration).toContain('after update of email_confirmed_at on auth.users');
+    expect(migration).toContain("delivery_status = 'delivered'");
+    expect(migration).toContain("selected_invite.invite_kind = 'member_single' and selected_invite.uses_count >= 1");
+    expect(migration).toContain("existing_redemption.claim_expires_at > now()");
+    expect(migration).toContain('u.created_at >= selected_redemption.requested_at');
+    expect(migration).toContain("if not claimed and invite_flow is distinct from 'rolling_v1' then");
+    expect(migration).toContain("r.delivery_status = 'reserved'");
+    expect(migration).toContain("if not claimed then");
+    expect(migration).toContain("raise exception 'invite confirmation is not pending'");
+    expect(migration).toContain('uses_count = uses_count + 1');
+    expect(migration).toContain('perform public.replenish_member_invite_pool(selected_invite.created_by)');
+    expect(migration).toContain('profiles.suspended_at is null');
+    expect(migration).toContain('revoke insert, update, delete on table public.invites from authenticated');
+    expect(migration).toContain('revoke insert, update, delete on table public.invite_redemptions from authenticated');
+    expect(migration).toContain('create or replace function public.complete_invite_redemption');
+    expect(migration).toContain('create or replace function public.prepare_existing_invite_user');
+    expect(migration).toContain("if selected_redemption.delivery_status = 'completed' then");
+    expect(migration).toContain('expected_user_id = target_user_id');
+    expect(migration).toContain('perform public.mark_invite_delivery(target_redemption_id, true)');
+    expect(migration).toContain('rebound_user := public.prepare_existing_invite_user(target_redemption_id)');
+    expect(migration).toContain('u.created_at < r.requested_at');
+    expect(migration).not.toContain('drop function if exists public.complete_invite_redemption');
+    expect(edge).toContain("invite_flow: 'rolling_v1'");
+    expect(edge.indexOf('await markInviteDelivery(supabaseUrl, serviceRoleKey, reserved.redemption_id, true)')).toBeLessThan(edge.indexOf('const newAccountCreated = await sendInvitedLink'));
+    expect(edge).toContain("'/rest/v1/rpc/mark_invite_delivery'");
+    expect(edge).toContain("'/rest/v1/rpc/prepare_existing_invite_user'");
+    expect(edge).toContain('const existingUser = [400, 422].includes');
+    expect(edge).toContain('keeping the pending claim until expiry');
+    expect(edge).not.toContain("'/rest/v1/rpc/complete_invite_redemption'");
+  });
+
+  test('admin invitation campaigns enforce a database-backed 1–50 use limit', async () => {
+    const migration = await read('supabase/migrations/023_rolling_member_invites.sql');
+    const admin = await read('src/lib/admin.ts');
+    expect(migration).toContain('create or replace function public.create_admin_invite');
+    expect(migration).toContain('requested_max_uses is null or requested_max_uses not between 1 and 50');
+    expect(migration).toContain("invite_kind = 'admin_campaign' and max_uses is not null and max_uses between 1 and 50");
+    expect(migration).toContain('create or replace function public.revoke_admin_invite');
+    expect(migration).toContain('create or replace function public.list_member_invites_for_admin');
+    expect(migration).toContain("raise exception 'admin access required'");
+    expect(migration).toContain('grant execute on function public.create_admin_invite');
+    expect(admin).toContain("rpc('create_admin_invite'");
+    expect(admin).toContain("rpc('revoke_admin_invite'");
+    expect(admin).toContain("rpc('list_member_invites_for_admin'");
   });
 
   test('bug reports use a rate-limited Edge Function and admin-only data access', async () => {

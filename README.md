@@ -8,7 +8,9 @@ Braga AI Builders is for people actively using AI—from everyday ChatGPT users 
 
 ## What it includes
 
-- Passwordless member access through Supabase magic links and a configured community-access code
+- Passwordless existing-member sign-in plus private member- and admin-shared invitation URLs
+- A rolling pool of five single-use links per active member, replenished after each confirmed new member
+- Admin campaign links with configurable capacities from 1 to 50
 - Required transactional-email consent with an explicit no-marketing promise
 - Public posts, anonymous posting and upvoting, categories, and tags
 - Optional public member profiles with author hover cards
@@ -22,14 +24,14 @@ Braga AI Builders is for people actively using AI—from everyday ChatGPT users 
 ## Use it for your community
 
 1. Fork this repository or click **Use this template** on GitHub.
-2. Edit [`src/config/community.ts`](src/config/community.ts) with your community identity, landing-page language, chat link, invite code, and repository URL.
+2. Edit [`src/config/community.ts`](src/config/community.ts) with your community identity, landing-page language, chat link, and repository URL.
 3. Create your own Supabase project and apply the migrations.
 4. Configure and deploy the three Edge Functions.
 5. Deploy the frontend to your own Vercel project.
 
 Every installation must use its own Supabase and Vercel projects. Forks never connect to Braga's production data.
 
-See **[Self-hosting](docs/self-hosting.md)** for the full setup, including the first invite and organizer account.
+See **[Self-hosting](docs/self-hosting.md)** for the full setup, including the one-time bootstrap invite and organizer account.
 
 ### Optional bug-report email
 
@@ -59,7 +61,6 @@ export const communityConfig = {
   tagline: 'A local community for shared interests',
   description: 'A short description of your community.',
   whatsappUrl: 'https://chat.whatsapp.com/...',
-  memberInviteCode: 'your-community-invite',
   githubUrl: 'https://github.com/you/local-community-platform',
   home: {
     eyebrow: 'A local community in Your City',

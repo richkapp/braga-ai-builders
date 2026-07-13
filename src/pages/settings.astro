@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProfileForm from '../components/profile/ProfileForm';
+import MemberInvitePool from '../components/invites/MemberInvitePool';
 import { communityPageTitle } from '../config/community';
 ---
 <BaseLayout title={communityPageTitle('Settings')}>
@@ -9,6 +10,9 @@ import { communityPageTitle } from '../config/community';
     <p class="mt-4 text-slate-300">Keep your public builder profile useful and safe.</p>
     <div class="mt-8">
       <ProfileForm client:load />
+    </div>
+    <div class="mt-8">
+      <MemberInvitePool client:load />
     </div>
   </section>
 </BaseLayout>

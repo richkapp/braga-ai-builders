@@ -5,8 +5,8 @@ Braga AI Builders uses a server-rendered Astro app with React islands for intera
 ## Data model
 
 - `profiles`: member profile data keyed to `auth.users`; public reads are opt-in and field-limited, while role and suspension state remain private.
-- `invites`: revocable community-access codes with optional expiry and capacity.
-- `invite_redemptions`: private audit and delivery-reservation records.
+- `invites`: system bootstrap links, rolling member-owned single-use URLs, and 1–50-use admin campaign URLs.
+- `invite_redemptions`: private delivery, pending-confirmation, capacity, and confirmed-member audit records.
 - `ideas`: public posts; stable anonymous visitor identifiers are never granted through the public Data API.
 - `idea_votes`: one upvote per authenticated or Edge-Function-managed visitor identity.
 - `events`: organizer-managed public listings that link to external RSVP pages.
@@ -15,9 +15,11 @@ Braga AI Builders uses a server-rendered Astro app with React islands for intera
 
 ## Authentication
 
-Visitors use `/signin` or the configured `/join/:code` route. The browser submits the configured access code and email to `request-invite-magic-link` only after explicit transactional-email consent. The Edge Function validates access with service-role credentials and sends a Supabase invite or magic link. Password authentication is not used.
+Existing members use `/signin`, which requests a Supabase magic link with account creation disabled. New members enter through a generated `/join/:code` URL. The browser submits the invite code and email to `request-invite-magic-link` only after explicit transactional-email consent. Password authentication is not used.
 
-Installations that need invitation-only membership must keep their code out of public configuration and expose only private coded join URLs.
+A delivery attempt arms a temporary pending reservation before GoTrue can confirm the Auth user; provider failure releases it. Supabase confirmation claims the invite for the newly confirmed account, increments capacity, and atomically replenishes a member-owned link. Existing members using an invitation to sign in never consume it.
+
+Every active member, including admins, gets five current single-use URLs through a security-definer RPC. Admins additionally create labeled campaign links with capacities from 1 to 50. Direct authenticated invite-table mutations are revoked.
 
 `admin` and `super_admin` are separate authorization levels. Both can use organizer tools. Only a non-suspended super admin can assign ordinary admins, suspend or restore member access, or delete an Auth user and its cascading community data.
 

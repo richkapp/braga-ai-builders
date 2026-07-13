@@ -4,7 +4,6 @@ export const communityConfig = {
   tagline: 'A local AI community',
   description: 'A Braga community for people actively using AI—from everyday ChatGPT users to advanced builders and everyone in between.',
   whatsappUrl: 'https://chat.whatsapp.com/GwhqmjtwcPT4vVmQmqqIRW',
-  memberInviteCode: 'braga-group-988401a9f0d147dfa68b5c7a16e683d3d0569c18',
   githubUrl: 'https://github.com/richkapp/local-community-platform',
   home: {
     eyebrow: 'A local AI community in Braga',
@@ -21,5 +20,4 @@ export const communityConfig = {
   }
 } as const;
 
-export const memberInvitePath = `/join/${communityConfig.memberInviteCode}`;
 export const communityPageTitle = (page?: string) => page ? `${page} · ${communityConfig.name}` : communityConfig.name;
