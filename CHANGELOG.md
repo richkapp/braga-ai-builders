@@ -7,6 +7,7 @@ Member post library:
 - Reworked Settings into Profile, Invites, My posts, and My bookmarks pill tabs so members can reach each section without scrolling through unrelated forms.
 - Added My posts and My bookmarks views to the public Posts page while preserving author-only editing for owned open posts.
 - Added private, account-synced post bookmarks with bookmark controls on feed and detail views.
+- Kept simultaneous bookmarks on popular posts concurrent and indexed member post-history lookups by author.
 - Renamed the ambiguous invitation Pending state to Claim in progress and explained that the 24-hour reservation starts only after an authentication email is requested.
 
 Rolling member invitations:
