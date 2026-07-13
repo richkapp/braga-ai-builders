@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuCheck, LuInfo, LuPencil, LuTrash2 } from 'react-icons/lu';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { supabase } from '@/lib/supabase';
 import { toUserMessage } from '@/lib/errors';
-import { attachPublicAuthors, updateOwnIdea } from '@/lib/ideas';
+import { attachPublicAuthors, getMyPostRelationships, updateOwnIdea, type PostRelationship } from '@/lib/ideas';
 import { RIP_CATEGORIES, RIP_TAGS, ripCategoryLabel, ripTagLabel } from '@/lib/rips';
-import { deleteIdea, isCurrentUserAdmin, updateIdeaStatus } from '@/lib/admin';
+import { deleteIdea, getCurrentMemberRole, updateIdeaStatus, type MemberRole } from '@/lib/admin';
+import { isAnonymousUser } from '@/lib/anonymous';
 import type { Event, Idea, RipCategory, RipTag } from '@/lib/types';
+import AuthRequired from '@/components/auth/AuthRequired';
 import UpvoteButton from './UpvoteButton';
+import BookmarkButton, { type BookmarkAccess } from './BookmarkButton';
 import RipTaxonomyPicker from './RipTaxonomyPicker';
 import PostAuthorPreview from './PostAuthorPreview';
 
@@ -15,14 +18,30 @@ type VoteCountRow = { idea_id: string; upvote_count: number };
 type VoteRow = { idea_id: string };
 type CategoryFilter = RipCategory | 'all';
 type TagFilter = RipTag | 'all';
+type FeedView = 'all' | 'mine' | 'bookmarks';
+type Props = {
+  initialView?: FeedView;
+  showIntro?: boolean;
+  showViewTabs?: boolean;
+  showFilters?: boolean;
+};
 
-const filterPill = 'rounded-full border px-3 py-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-limewash/70';
+const filterPill = 'min-h-11 rounded-full border px-3 py-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-limewash/70';
 
 function formatEventDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Lisbon' }).format(new Date(value));
 }
 
-async function hydrateIdeas(rows: Idea[], viewerId: string | null) {
+async function listVisibleIdeas(ids?: string[]) {
+  if (ids && ids.length === 0) return [];
+  let request = supabase.rpc('list_visible_ideas').order('created_at', { ascending: false });
+  if (ids) request = request.in('id', ids);
+  const { data, error } = await request;
+  if (error) throw error;
+  return (data ?? []) as Idea[];
+}
+
+async function hydrateIdeas(rows: Idea[], viewerId: string | null, relationships: PostRelationship[]) {
   const ids = rows.map((idea) => idea.id);
   if (ids.length === 0) return rows;
   const { data: counts, error: countError } = await supabase.from('idea_vote_counts').select('idea_id, upvote_count').in('idea_id', ids);
@@ -34,7 +53,18 @@ async function hydrateIdeas(rows: Idea[], viewerId: string | null) {
     voted = new Set(((votes ?? []) as VoteRow[]).map((vote) => vote.idea_id));
   }
   const countById = new Map(((counts ?? []) as VoteCountRow[]).map((row) => [row.idea_id, row.upvote_count]));
-  return rows.map((idea) => ({ ...idea, upvote_count: countById.get(idea.id) ?? 0, viewer_has_voted: voted.has(idea.id) }));
+  const relationshipById = new Map(relationships.map((row) => [row.idea_id, row]));
+  return rows.map((idea) => {
+    const relationship = relationshipById.get(idea.id);
+    return {
+      ...idea,
+      upvote_count: countById.get(idea.id) ?? 0,
+      viewer_has_voted: voted.has(idea.id),
+      viewer_is_author: relationship?.viewer_is_author ?? false,
+      viewer_has_bookmarked: relationship?.viewer_has_bookmarked ?? false,
+      viewer_bookmarked_at: relationship?.bookmarked_at ?? null
+    };
+  });
 }
 
 function TaxonomyBadges({ idea }: { idea: Idea }) {
@@ -56,7 +86,7 @@ function IdeaEditor({ idea, onClose, onSaved }: { idea: Idea; onClose: () => voi
   return (
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink-950/80 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(click) => { if (click.target === click.currentTarget) onClose(); }}>
       <form onSubmit={submit} className="card my-6 w-full max-w-2xl space-y-4 p-6" role="dialog" aria-modal="true" aria-labelledby="edit-idea-title">
-        <div className="flex items-start justify-between gap-4"><div><h2 id="edit-idea-title" className="text-2xl font-black text-white">Edit post</h2><p className="mt-1 text-sm text-braga-200">Update its category, tags, title, or details.</p></div><button type="button" className="text-sm text-braga-200 hover:text-white" onClick={onClose}>Close</button></div>
+        <div className="flex items-start justify-between gap-4"><div><h2 id="edit-idea-title" className="text-2xl font-black text-white">Edit post</h2><p className="mt-1 text-sm text-braga-200">Update its category, tags, title, or details.</p></div><button type="button" className="min-h-11 text-sm text-braga-200 hover:text-white" onClick={onClose}>Close</button></div>
         <RipTaxonomyPicker category={category} tags={tags} onCategoryChange={setCategory} onTagsChange={setTags} />
         <div><label className="label" htmlFor="edit-idea-name">Title</label><input id="edit-idea-name" className="input mt-2" value={title} onChange={(change) => setTitle(change.target.value)} minLength={4} maxLength={120} required /></div>
         <div><label className="label" htmlFor="edit-idea-body">Details</label><textarea id="edit-idea-body" className="input mt-2 min-h-40" value={body} onChange={(change) => setBody(change.target.value)} minLength={10} maxLength={2000} required /></div>
@@ -67,42 +97,101 @@ function IdeaEditor({ idea, onClose, onSaved }: { idea: Idea; onClose: () => voi
   );
 }
 
-export default function IdeaFeed() {
+const viewLabels: Record<FeedView, string> = {
+  all: 'All posts',
+  mine: 'My posts',
+  bookmarks: 'My bookmarks'
+};
+
+function participationCopy(access: BookmarkAccess) {
+  if (access === 'active') return 'Your posts are tied to your member profile. Use My posts to edit them and My bookmarks to revisit saved posts.';
+  if (access === 'inactive') return 'This account is signed in, but its community membership is not active. Contact an organizer if that looks wrong.';
+  return <>You can post and vote without an account. Want your posts tied to your profile, editable, and bookmarkable? <a className="font-semibold text-limewash hover:underline" href="/signin">Already a member? Sign in with a magic link →</a></>;
+}
+
+export default function IdeaFeed({ initialView = 'all', showIntro = true, showViewTabs = true, showFilters = true }: Props) {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [libraryAccess, setLibraryAccess] = useState<BookmarkAccess>('signed-out');
   const [nextEvent, setNextEvent] = useState<Event | null>(null);
   const [editing, setEditing] = useState<Idea | null>(null);
+  const [view, setView] = useState<FeedView>(initialView);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [tagFilter, setTagFilter] = useState<TagFilter>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const loadSequence = useRef(0);
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setLoading(true); setError('');
     try {
-      const [ideaResponse, userResponse, admin, eventResponse] = await Promise.all([
-        supabase.rpc('list_visible_ideas').order('created_at', { ascending: false }),
+      const eventRequest = showIntro
+        ? supabase.from('events').select('*').in('status', ['published', 'completed']).gte('starts_at', new Date().toISOString()).order('starts_at', { ascending: true }).limit(1).maybeSingle()
+        : Promise.resolve({ data: null, error: null });
+      const [publicIdeas, userResponse, eventResponse] = await Promise.all([
+        initialView === 'all' ? listVisibleIdeas() : Promise.resolve(null),
         supabase.auth.getUser(),
-        isCurrentUserAdmin(),
-        supabase.from('events').select('*').in('status', ['published', 'completed']).gte('starts_at', new Date().toISOString()).order('starts_at', { ascending: true }).limit(1).maybeSingle()
+        eventRequest
       ]);
-      if (ideaResponse.error) throw ideaResponse.error;
       if (eventResponse.error) throw eventResponse.error;
-      const userId = userResponse.data.user?.id ?? null;
-      const withAuthors = await attachPublicAuthors((ideaResponse.data ?? []) as Idea[]);
-      setIdeas(await hydrateIdeas(withAuthors, userId)); setIsAdmin(admin); setNextEvent((eventResponse.data as Event | null) ?? null);
-    } catch (caught) { setError(toUserMessage('ideas-feed', caught)); }
-    finally { setLoading(false); }
-  }, []);
+
+      const user = userResponse.data.user;
+      const accountUserId = user && !isAnonymousUser(user) ? user.id : null;
+      let memberRole: MemberRole | null = null;
+      let relationships: PostRelationship[] = [];
+      if (accountUserId) {
+        [memberRole, relationships] = await Promise.all([
+          getCurrentMemberRole(),
+          getMyPostRelationships()
+        ]);
+        if (!memberRole) relationships = [];
+      }
+
+      const activeMember = Boolean(memberRole);
+      const relationshipIds = initialView === 'mine'
+        ? relationships.filter((relationship) => relationship.viewer_is_author).map((relationship) => relationship.idea_id)
+        : relationships.filter((relationship) => relationship.viewer_has_bookmarked).map((relationship) => relationship.idea_id);
+      const ideaRows = initialView === 'all'
+        ? publicIdeas ?? []
+        : activeMember ? await listVisibleIdeas(relationshipIds) : [];
+
+      const withAuthors = await attachPublicAuthors(ideaRows);
+      if (sequence !== loadSequence.current) return;
+      const hydratedIdeas = await hydrateIdeas(withAuthors, accountUserId, relationships);
+      if (sequence !== loadSequence.current) return;
+      setIdeas(hydratedIdeas);
+      setLibraryAccess(activeMember ? 'active' : accountUserId ? 'inactive' : 'signed-out');
+      setIsAdmin(memberRole === 'admin' || memberRole === 'super_admin');
+      setNextEvent((eventResponse.data as Event | null) ?? null);
+    } catch (caught) {
+      if (sequence === loadSequence.current) setError(toUserMessage('ideas-feed', caught));
+    } finally {
+      if (sequence === loadSequence.current) setLoading(false);
+    }
+  }, [initialView, showIntro]);
 
   useEffect(() => {
     void load();
     const refresh = () => void load();
     window.addEventListener('braga:ideas-changed', refresh);
-    return () => window.removeEventListener('braga:ideas-changed', refresh);
+    return () => {
+      loadSequence.current += 1;
+      window.removeEventListener('braga:ideas-changed', refresh);
+    };
   }, [load]);
 
-  const filteredIdeas = useMemo(() => ideas.filter((idea) => (categoryFilter === 'all' || idea.category === categoryFilter) && (tagFilter === 'all' || idea.tags.includes(tagFilter))), [ideas, categoryFilter, tagFilter]);
+  const filteredIdeas = useMemo(() => {
+    const matching = ideas.filter((idea) => {
+      if (view === 'mine' && !idea.viewer_is_author) return false;
+      if (view === 'bookmarks' && !idea.viewer_has_bookmarked) return false;
+      return (categoryFilter === 'all' || idea.category === categoryFilter)
+        && (tagFilter === 'all' || idea.tags.includes(tagFilter));
+    });
+    return view === 'bookmarks'
+      ? [...matching].sort((left, right) => Date.parse(right.viewer_bookmarked_at ?? '1970-01-01') - Date.parse(left.viewer_bookmarked_at ?? '1970-01-01'))
+      : matching;
+  }, [ideas, view, categoryFilter, tagFilter]);
 
   async function markDone(idea: Idea) {
     setError('');
@@ -117,39 +206,61 @@ export default function IdeaFeed() {
     catch (caught) { setError(toUserMessage('admin-save', caught)); }
   }
 
+  function updateBookmark(ideaId: string, bookmarked: boolean) {
+    setIdeas((current) => current.map((idea) => idea.id === ideaId ? {
+      ...idea,
+      viewer_has_bookmarked: bookmarked,
+      viewer_bookmarked_at: bookmarked ? new Date().toISOString() : null
+    } : idea));
+  }
+
+  function chooseView(nextView: FeedView) {
+    setView(nextView);
+    setCategoryFilter('all');
+    setTagFilter('all');
+  }
+
   if (loading) return <p className="card p-6 text-braga-100" role="status">Loading posts…</p>;
   if (error) return <p className="error-message" role="alert">{error}</p>;
+  if (initialView !== 'all' && libraryAccess === 'signed-out') return <AuthRequired title={initialView === 'mine' ? 'Your posts' : 'Your bookmarks'} message="Sign in with your member account to see your personal post library." />;
+  if (initialView !== 'all' && libraryAccess === 'inactive') return <div className="card p-6"><h2 className="text-xl font-bold text-white">Member access unavailable</h2><p className="mt-2 text-sm leading-6 text-braga-100">This account is signed in, but its community membership is not active. Contact an organizer if that looks wrong.</p></div>;
 
   return (
     <div className="space-y-5">
-      <aside className="rounded-2xl border border-braga-300/20 bg-braga-950/45 p-5" aria-label="Post participation information">
-        <div className="flex gap-3"><LuInfo className="mt-0.5 h-5 w-5 shrink-0 text-limewash" aria-hidden="true" /><div className="space-y-2 text-sm leading-6 text-braga-100"><p>You can post and vote without an account. Want your posts tied to your profile and editable? <a className="font-semibold text-limewash hover:underline" href="/signin">Already a member? Sign in with a magic link →</a></p>{nextEvent && <p><span className="font-semibold text-white">Next event:</span> {formatEventDate(nextEvent.starts_at)} · <a className="font-semibold text-limewash hover:underline" href={nextEvent.external_url || '/events'} target="_blank" rel="noreferrer noopener">{nextEvent.title} ↗</a></p>}</div></div>
-      </aside>
+      {showIntro && <aside className="rounded-2xl border border-braga-300/20 bg-braga-950/45 p-5" aria-label="Post participation information">
+        <div className="flex gap-3"><LuInfo className="mt-0.5 h-5 w-5 shrink-0 text-limewash" aria-hidden="true" /><div className="space-y-2 text-sm leading-6 text-braga-100"><p>{participationCopy(libraryAccess)}</p>{nextEvent && <p><span className="font-semibold text-white">Next event:</span> {formatEventDate(nextEvent.starts_at)} · <a className="font-semibold text-limewash hover:underline" href={nextEvent.external_url || '/events'} target="_blank" rel="noreferrer noopener">{nextEvent.title} ↗</a></p>}</div></div>
+      </aside>}
 
-      <section className="space-y-4 rounded-2xl border border-braga-300/15 p-5" aria-label="Filter posts">
+      {showViewTabs && libraryAccess === 'active' && <nav className="flex flex-wrap gap-2" aria-label="Post library views">
+        {(Object.keys(viewLabels) as FeedView[]).map((item) => <button key={item} type="button" className={`${filterPill} ${view === item ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={view === item} onClick={() => chooseView(item)}>{viewLabels[item]}</button>)}
+      </nav>}
+
+      {showFilters && <section className="space-y-4 rounded-2xl border border-braga-300/15 p-5" aria-label="Filter posts">
         <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-braga-300">Category</p><div className="mt-2 flex flex-wrap gap-2"><button type="button" className={`${filterPill} ${categoryFilter === 'all' ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100'}`} onClick={() => setCategoryFilter('all')}>All</button>{RIP_CATEGORIES.map((item) => <button key={item.value} type="button" className={`${filterPill} ${categoryFilter === item.value ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={categoryFilter === item.value} onClick={() => setCategoryFilter(item.value)}>{item.label}</button>)}</div></div>
         <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-braga-300">Tags</p><div className="mt-2 flex flex-wrap gap-2"><button type="button" className={`${filterPill} ${tagFilter === 'all' ? 'border-violet-300 bg-violet-500/20 text-violet-100' : 'border-braga-300/30 text-braga-100'}`} onClick={() => setTagFilter('all')}>All</button>{RIP_TAGS.map((item) => <button key={item.value} type="button" className={`${filterPill} ${tagFilter === item.value ? 'border-violet-300 bg-violet-500/20 text-violet-100' : 'border-braga-300/30 text-braga-100 hover:border-violet-300/60'}`} aria-pressed={tagFilter === item.value} onClick={() => setTagFilter(item.value)}>{item.label}</button>)}</div></div>
-      </section>
+      </section>}
 
       {filteredIdeas.map((idea) => {
-        const canEdit = Boolean(idea.viewer_can_edit);
-        return <article key={idea.id} className="card relative flex gap-4 p-5">
+        const canEdit = libraryAccess === 'active' && Boolean(idea.viewer_can_edit);
+        const contentPadding = isAdmin ? 'sm:pr-56' : canEdit ? 'sm:pr-28' : 'sm:pr-14';
+        return <article key={idea.id} className="card relative flex flex-wrap gap-4 p-5 sm:flex-nowrap">
           <UpvoteButton ideaId={idea.id} initialCount={idea.upvote_count ?? 0} initialVoted={idea.viewer_has_voted ?? false} disabled={idea.status === 'closed'} />
-          <div className={(canEdit || isAdmin) ? 'min-w-0 flex-1 pr-28' : 'min-w-0 flex-1'}>
+          <div className={`min-w-0 flex-1 ${contentPadding}`}>
             <TaxonomyBadges idea={idea} />
             <div className="flex flex-wrap items-center gap-2"><a href={`/ideas/${idea.slug}`} className="text-xl font-bold text-white hover:text-limewash">{idea.title}</a>{idea.status === 'closed' && <span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">Done</span>}</div>
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-braga-100">{idea.body}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-braga-300"><span>{idea.month_key}</span><span aria-hidden="true">·</span><PostAuthorPreview profile={idea.profiles} /></div>
           </div>
-          {(canEdit || isAdmin) && <div className="absolute right-4 top-4 flex gap-2">
-            {canEdit && <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-braga-300/30 text-braga-100 hover:border-limewash/70 hover:text-limewash" onClick={() => setEditing(idea)} aria-label={`Edit ${idea.title}`} title="Edit post"><LuPencil className="h-4 w-4" aria-hidden="true" /></button>}
-            {isAdmin && idea.status !== 'closed' && <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-limewash/30 text-limewash hover:bg-limewash/10" onClick={() => void markDone(idea)} aria-label={`Mark ${idea.title} as done`} title="Mark done"><LuCheck className="h-4 w-4" aria-hidden="true" /></button>}
-            {isAdmin && <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-300/30 text-red-200 hover:bg-red-300/10" onClick={() => void remove(idea)} aria-label={`Delete ${idea.title}`} title="Delete post"><LuTrash2 className="h-4 w-4" aria-hidden="true" /></button>}
-          </div>}
+          <div className="flex w-full justify-end gap-2 sm:absolute sm:right-4 sm:top-4 sm:w-auto">
+            <BookmarkButton ideaId={idea.id} title={idea.title} initialBookmarked={idea.viewer_has_bookmarked} access={libraryAccess} onChange={(bookmarked) => updateBookmark(idea.id, bookmarked)} />
+            {canEdit && <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-braga-300/30 text-braga-100 hover:border-limewash/70 hover:text-limewash" onClick={() => setEditing(idea)} aria-label={`Edit ${idea.title}`} title="Edit post"><LuPencil className="h-4 w-4" aria-hidden="true" /></button>}
+            {isAdmin && idea.status !== 'closed' && <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-limewash/30 text-limewash hover:bg-limewash/10" onClick={() => void markDone(idea)} aria-label={`Mark ${idea.title} as done`} title="Mark done"><LuCheck className="h-4 w-4" aria-hidden="true" /></button>}
+            {isAdmin && <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-red-300/30 text-red-200 hover:bg-red-300/10" onClick={() => void remove(idea)} aria-label={`Delete ${idea.title}`} title="Delete post"><LuTrash2 className="h-4 w-4" aria-hidden="true" /></button>}
+          </div>
         </article>;
       })}
       {ideas.length === 0 && <p className="card p-6 text-braga-100">No posts yet. Be the first to add one.</p>}
-      {ideas.length > 0 && filteredIdeas.length === 0 && <p className="card p-6 text-braga-100">No posts match those filters.</p>}
+      {ideas.length > 0 && filteredIdeas.length === 0 && <p className="card p-6 text-braga-100">{view === 'mine' ? 'You have not published any posts with your member profile yet.' : view === 'bookmarks' ? 'You have not bookmarked any posts yet.' : 'No posts match those filters.'}</p>}
       {editing && <IdeaEditor idea={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(); }} />}
     </div>
   );

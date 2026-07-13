@@ -191,16 +191,18 @@ describe('launch frontend contracts', () => {
 
   test('member settings expose five rolling shareable invitation URLs', async () => {
     const settings = await read('src/pages/settings.astro');
+    const hub = await read('src/components/settings/SettingsHub.tsx');
     const component = await read('src/components/invites/MemberInvitePool.tsx');
     const invites = await read('src/lib/invites.ts');
     const callback = await read('src/components/auth/AuthCallback.tsx');
-    expect(settings).toContain('MemberInvitePool');
-    expect(settings).toContain('<MemberInvitePool client:load />');
+    expect(settings).toContain('SettingsHub');
+    expect(settings).toContain('<SettingsHub initialTab={initialTab} client:load />');
+    expect(hub).toContain('MemberInvitePool');
     expect(component).toContain('Invite friends');
     expect(component).toContain('navigator.share');
     expect(component).toContain('Copy link');
     expect(component).toContain('Available');
-    expect(component).toContain('Pending');
+    expect(component).toContain('Claim in progress');
     expect(component).toContain('Recently joined');
     expect(component).toContain('requestSequence.current');
     expect(component).toContain("document.visibilityState === 'visible'");
@@ -209,6 +211,58 @@ describe('launch frontend contracts', () => {
     expect(callback).toContain("inviteFlow !== 'rolling_v1'");
     expect(callback).toContain('if (!recentlyCreated) return');
     expect(callback).toContain("console.error('[invite-claim-backup]'");
+  });
+
+  test('member settings explain invitation claim reservations precisely', async () => {
+    const component = await read('src/components/invites/MemberInvitePool.tsx');
+    const admin = await read('src/components/admin/InviteManager.tsx');
+    expect(component).toContain('Claim in progress');
+    expect(component).toContain('reserved for up to 24 hours');
+    expect(component).toContain('after they request their authentication email');
+    expect(component).not.toContain("pending ? 'Pending'");
+    expect(admin).toContain("invite.status === 'pending' ? 'Claim in progress'");
+  });
+
+  test('settings and posts expose member post history and private bookmark libraries', async () => {
+    const settings = await read('src/pages/settings.astro');
+    const hub = await read('src/components/settings/SettingsHub.tsx');
+    const feed = await read('src/components/ideas/IdeaFeed.tsx');
+    const detail = await read('src/components/ideas/IdeaDetail.tsx');
+    const bookmark = await read('src/components/ideas/BookmarkButton.tsx');
+    const ideas = await read('src/lib/ideas.ts');
+
+    expect(settings).toContain('SettingsHub');
+    expect(settings).toContain('<SettingsHub initialTab={initialTab} client:load />');
+    expect(settings).toContain("Astro.url.searchParams.get('tab')");
+    expect(hub).toContain("'Profile'");
+    expect(hub).toContain("'Invites'");
+    expect(hub).toContain("'My posts'");
+    expect(hub).toContain("'My bookmarks'");
+    expect(hub).toContain("searchParams.get('tab')");
+    expect(hub).toContain('useState<SettingsTab>(initialTab)');
+    expect(hub).toContain("aria-current={activeTab === key ? 'page' : undefined}");
+    expect(hub).toContain('window.history.pushState');
+    expect(hub).toContain('IdeaFeed');
+    expect(feed).toContain("type FeedView = 'all' | 'mine' | 'bookmarks'");
+    expect(feed).toContain('My posts');
+    expect(feed).toContain('My bookmarks');
+    expect(feed).toContain('viewer_is_author');
+    expect(feed).toContain('viewer_has_bookmarked');
+    expect(feed).toContain('viewer_bookmarked_at');
+    expect(feed).toContain('BookmarkButton');
+    expect(feed).toContain('updateOwnIdea');
+    expect(feed).toContain('Member access unavailable');
+    expect(feed).toContain("setCategoryFilter('all')");
+    expect(feed).toContain("request = request.in('id', ids)");
+    expect(detail).toContain('BookmarkButton');
+    expect(detail).toContain('Bookmarking is unavailable because this account’s community membership is not active.');
+    expect(bookmark).toContain('setIdeaBookmark');
+    expect(bookmark).toContain('Sign in to bookmark');
+    expect(bookmark).toContain('role="alert"');
+    expect(bookmark).not.toContain('className="sr-only" role="alert"');
+    expect(ideas).toContain("rpc('get_my_post_relationships'");
+    expect(ideas).toContain('target_idea_id: ideaId');
+    expect(ideas).toContain("rpc('set_idea_bookmark'");
   });
 
   test('profile directory visibility is a prominent first setting', async () => {

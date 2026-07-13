@@ -12,9 +12,10 @@
 
 ## RLS and API expectations
 
-- Active members can update only their own profile and posts; suspended accounts are blocked from community mutations at the database boundary.
+- Active members are permanent, non-anonymous accounts that can update only their own profile and posts; suspended accounts and temporary anonymous identities are blocked from direct community mutations at the database boundary.
 - Visitors can create anonymous posts and upvotes only through the origin-checked Edge Function.
 - Public post reads expose only a safe per-viewer edit capability; underlying author and anonymous visitor IDs remain private.
+- Member bookmarks are private account state exposed only through narrow relationship and idempotent desired-state RPCs; clients have no direct bookmark-table privileges.
 - Events are public listings that send RSVP traffic to external event pages.
 - Legacy event-registration tables and functions are not part of the user-facing product and attendee counts are not public.
 - Members can read only their own five-link invitation pool through a constrained RPC. Organizers can inspect and replace current member-owned links, create campaign invites, manage events, moderate post lifecycle state, triage bug reports, and read the full member directory.

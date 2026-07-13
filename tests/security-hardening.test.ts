@@ -217,6 +217,32 @@ describe('delivery security contracts', () => {
     expect(admin).toContain("rpc('list_member_invites_for_admin'");
   });
 
+  test('post bookmarks are private, unique, and limited to active signed-in members', async () => {
+    const migration = await read('supabase/migrations/024_post_bookmarks.sql');
+    expect(migration).toContain('create table public.idea_bookmarks');
+    expect(migration).toContain('primary key (user_id, idea_id)');
+    expect(migration).toContain('references auth.users(id) on delete cascade');
+    expect(migration).toContain('references public.ideas(id) on delete cascade');
+    expect(migration).toContain('alter table public.idea_bookmarks enable row level security');
+    expect(migration).toContain('revoke all on table public.idea_bookmarks from public, anon, authenticated');
+    expect(migration).toContain('create or replace function public.get_my_post_relationships');
+    expect(migration).toContain('create or replace function public.set_idea_bookmark');
+    expect(migration).toContain('create or replace function public.is_active_member()');
+    expect(migration).toContain('create or replace function public.is_admin()');
+    expect(migration).toContain('create or replace function public.is_super_admin()');
+    expect(migration).toContain('select not public.is_anonymous_user()');
+    expect(migration).toContain('create or replace function public.current_member_role()');
+    expect(migration).toContain('public.is_active_member()');
+    expect(migration).toContain("auth.jwt() ->> 'is_anonymous'");
+    expect(migration).toContain("raise exception 'active member account required'");
+    expect(migration).toContain("target.status <> 'hidden' or public.is_admin()");
+    expect(migration).toContain('grant execute on function public.get_my_post_relationships(uuid) to authenticated');
+    expect(migration).toContain('on conflict (user_id, idea_id) do nothing');
+    expect(migration).toContain('grant execute on function public.set_idea_bookmark(uuid, boolean) to authenticated');
+    expect(migration).toContain('and public.is_active_member()');
+    expect(migration).not.toContain('grant select on table public.idea_bookmarks to authenticated');
+  });
+
   test('bug reports use a rate-limited Edge Function and admin-only data access', async () => {
     const migration = await read('supabase/migrations/019_bug_reports.sql');
     const notifications = await read('supabase/migrations/022_bug_report_notifications.sql');

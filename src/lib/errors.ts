@@ -28,6 +28,7 @@ export function toUserMessage(context: string, error: unknown): string {
     'idea-detail': 'This idea could not be loaded.',
     'idea-create': 'Your idea could not be posted. Check the fields and try again.',
     'idea-vote': 'Your upvote could not be saved. Please try again.',
+    'idea-bookmark': 'Your bookmark could not be saved. Please try again.',
     'events-list': 'Events could not be loaded. Please refresh and try again.',
     'event-detail': 'This event could not be loaded.',
     'event-registration': 'Your registration could not be saved. Please try again.',

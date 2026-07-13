@@ -39,6 +39,9 @@ export type Idea = {
   created_at: string;
   updated_at: string;
   viewer_can_edit?: boolean;
+  viewer_is_author?: boolean;
+  viewer_has_bookmarked?: boolean;
+  viewer_bookmarked_at?: string | null;
   profiles?: PublicProfile | null;
   upvote_count?: number;
   viewer_has_voted?: boolean;
