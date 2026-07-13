@@ -17,6 +17,7 @@ Theme-neutral repository identity and configuration:
 - Repositioned the project for any local or interest-based community, not only AI groups.
 - Moved Braga's AI-specific landing-page language into `src/config/community.ts` so forks can replace the theme without rewriting page components.
 - Updated the package name, repository links, self-hosting examples, metadata, and generic profile fallbacks.
+- Closed the historical security-review handoff after verifying its route, database-permission, invite-delivery, CI, and production-deployment work is shipped; no application code or runtime configuration changed.
 
 ## 0.1.1 — 2026-07-11
 
