@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import type { EditableProfile } from './types';
+import type { EditableProfile, EditableProfileRecord } from './types';
+import { verifiedProfileIdentity } from './profileIdentity';
 
 const editableProfileSelect = 'id, handle, display_name, bio, avatar_url, website_url, linkedin_url, github_url, x_url, is_public, created_at, updated_at';
 const urlFields = ['avatar_url', 'website_url', 'linkedin_url', 'github_url', 'x_url'] as const;
@@ -29,15 +30,16 @@ export async function fetchMyProfile() {
     .from('profiles')
     .select(editableProfileSelect)
     .eq('id', userData.user.id)
-    .single<EditableProfile>();
+    .single<EditableProfileRecord>();
 
   if (error) throw error;
   return data;
 }
 
-export async function updateMyProfile(profile: Partial<EditableProfile>) {
+export async function updateMyProfile(expectedUserId: string, profile: Partial<EditableProfile>) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error('You need to sign in first.');
+  const targetUserId = verifiedProfileIdentity(expectedUserId, userData.user.id);
 
   const safeProfile: Partial<EditableProfile> = {
     handle: profile.handle ?? null,
@@ -58,9 +60,9 @@ export async function updateMyProfile(profile: Partial<EditableProfile>) {
   const { data, error } = await supabase
     .from('profiles')
     .update(safeProfile)
-    .eq('id', userData.user.id)
+    .eq('id', targetUserId)
     .select(editableProfileSelect)
-    .single<EditableProfile>();
+    .single<EditableProfileRecord>();
 
   if (error) throw error;
   return data;

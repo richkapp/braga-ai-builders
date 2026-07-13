@@ -24,6 +24,8 @@ export type EditableProfile = Pick<
   'handle' | 'display_name' | 'bio' | 'avatar_url' | 'website_url' | 'linkedin_url' | 'github_url' | 'x_url' | 'is_public'
 >;
 
+export type EditableProfileRecord = EditableProfile & Pick<Profile, 'id'>;
+
 export type RipCategory = 'idea' | 'resource' | 'perspective';
 export type RipTag = string;
 
