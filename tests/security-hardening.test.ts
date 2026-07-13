@@ -129,6 +129,7 @@ describe('delivery security contracts', () => {
   test('RIP categories and tags are constrained across direct and anonymous writes', async () => {
     const migration = await read('supabase/migrations/016_rip_categories_tags.sql');
     const dynamicTags = await read('supabase/migrations/026_member_created_post_tags.sql');
+    const tagHardening = await read('supabase/migrations/027_post_tag_hardening.sql');
     const edge = await read('supabase/functions/anonymous-ideas/index.ts');
     expect(migration).toContain("category in ('idea', 'resource', 'perspective')");
     expect(migration).toContain("'community-challenge'");
@@ -153,6 +154,10 @@ describe('delivery security contracts', () => {
     expect(dynamicTags).toContain('grant execute on function public.list_post_tags() to anon, authenticated');
     expect(dynamicTags).toContain('grant execute on function public.create_post_tag(text) to authenticated');
     expect(dynamicTags).not.toContain('grant select on table public.post_tags to authenticated');
+    expect(tagHardening).toContain("'member-admin:' || viewer_id::text");
+    expect(tagHardening).toContain('if not public.is_active_member() then');
+    expect(tagHardening).toContain('cardinality(public.ideas.tags) <> cardinality(normalized.tags)');
+    expect(tagHardening).toContain('array_agg(tag_positions.tag order by tag_positions.first_position)');
   });
 
   test('post author hover cards expose only already-public profile fields', async () => {
