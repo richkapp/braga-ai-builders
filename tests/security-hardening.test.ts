@@ -219,6 +219,7 @@ describe('delivery security contracts', () => {
 
   test('post bookmarks are private, unique, and limited to active signed-in members', async () => {
     const migration = await read('supabase/migrations/024_post_bookmarks.sql');
+    const queryPaths = await read('supabase/migrations/025_post_library_query_paths.sql');
     expect(migration).toContain('create table public.idea_bookmarks');
     expect(migration).toContain('primary key (user_id, idea_id)');
     expect(migration).toContain('references auth.users(id) on delete cascade');
@@ -241,6 +242,12 @@ describe('delivery security contracts', () => {
     expect(migration).toContain('grant execute on function public.set_idea_bookmark(uuid, boolean) to authenticated');
     expect(migration).toContain('and public.is_active_member()');
     expect(migration).not.toContain('grant select on table public.idea_bookmarks to authenticated');
+    expect(queryPaths).toContain('create index if not exists ideas_author_id_idx');
+    expect(queryPaths).toContain('on public.ideas (author_id)');
+    expect(queryPaths).toContain('where author_id is not null');
+    expect(queryPaths).toContain('create or replace function public.set_idea_bookmark');
+    expect(queryPaths).toContain('for share');
+    expect(queryPaths).not.toContain('for no key update');
   });
 
   test('bug reports use a rate-limited Edge Function and admin-only data access', async () => {
