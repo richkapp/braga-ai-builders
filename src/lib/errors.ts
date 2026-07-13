@@ -17,7 +17,11 @@ export function toUserMessage(context: string, error: unknown): string {
     if (context.includes('profile')) return 'That handle is already in use. Try another one.';
     if (context.includes('vote')) return 'You already upvoted this idea.';
     if (context.includes('registration')) return 'You are already registered for this event.';
+    if (context.includes('tag')) return 'That tag already exists. Choose it from the list instead.';
   }
+
+  if (context.includes('tag') && /lifetime limit/i.test(message)) return 'You have used all 3 of your lifetime tags.';
+  if (context.includes('tag') && /2 to 28|letters or numbers|invalid/i.test(message)) return 'Use a clear tag name between 2 and 28 characters.';
 
   if (/invalid invite|expired|exhausted|revoked|cooldown|too many/i.test(message)) {
     return 'This invite cannot be used right now. Ask a member or organizer for a current link.';
@@ -29,6 +33,8 @@ export function toUserMessage(context: string, error: unknown): string {
     'idea-create': 'Your idea could not be posted. Check the fields and try again.',
     'idea-vote': 'Your upvote could not be saved. Please try again.',
     'idea-bookmark': 'Your bookmark could not be saved. Please try again.',
+    'tag-list': 'Tags could not be loaded. Please refresh and try again.',
+    'tag-create': 'That tag could not be added. Check the name and try again.',
     'events-list': 'Events could not be loaded. Please refresh and try again.',
     'event-detail': 'This event could not be loaded.',
     'event-registration': 'Your registration could not be saved. Please try again.',

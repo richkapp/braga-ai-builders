@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { slugWithRandomSuffix } from './slug';
 import { RIP_CATEGORIES, normalizeRipTags } from './rips';
-import type { Idea, RipCategory, RipTag } from './types';
+import type { Idea, PostTagCatalogItem, RipCategory, RipTag } from './types';
 import { createAnonymousIdea, isAnonymousUser, toggleAnonymousVote } from './anonymous';
 
 type PublicAuthor = {
@@ -26,6 +26,18 @@ export type PostRelationship = {
   bookmarked_at: string | null;
 };
 export const PUBLIC_IDEA_COLUMNS = 'id, slug, title, body, month_key, status, created_at, updated_at, category, tags';
+
+export async function listPostTags(): Promise<PostTagCatalogItem[]> {
+  const { data, error } = await supabase.rpc('list_post_tags');
+  if (error) throw error;
+  return (data ?? []) as PostTagCatalogItem[];
+}
+
+export async function createPostTag(label: string): Promise<RipTag> {
+  const { data, error } = await supabase.rpc('create_post_tag', { p_label: label });
+  if (error) throw error;
+  return String(data);
+}
 
 export async function getMyPostRelationships(ideaId?: string): Promise<PostRelationship[]> {
   const { data, error } = await supabase.rpc('get_my_post_relationships', ideaId ? { target_idea_id: ideaId } : {});

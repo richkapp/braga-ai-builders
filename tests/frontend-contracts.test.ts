@@ -70,9 +70,9 @@ describe('launch frontend contracts', () => {
     expect(feed).toContain('Already a member? Sign in with a magic link');
     expect(feed).toContain('Next event:');
     expect(feed).toContain('RIP_CATEGORIES');
-    expect(feed).toContain('RIP_TAGS');
+    expect(feed).toContain('usePostTagCatalog');
     expect(feed).toContain('categoryFilter');
-    expect(feed).toContain('tagFilter');
+    expect(feed).toContain('selectedTags');
     expect(feed).toContain('updateOwnIdea');
     expect(feed).toContain('Mark done');
     expect(feed).toContain('deleteIdea');
@@ -80,6 +80,30 @@ describe('launch frontend contracts', () => {
     expect(ideas).toContain('supabase.auth.getSession()');
     expect(events).toContain('isAnonymousUser');
     expect(profile).toContain('isAnonymousUser');
+  });
+
+  test('post tags are popularity-ranked, expandable, multi-filterable, and member-creatable', async () => {
+    const picker = await read('src/components/ideas/RipTaxonomyPicker.tsx');
+    const feed = await read('src/components/ideas/IdeaFeed.tsx');
+    const catalog = await read('src/components/ideas/usePostTagCatalog.ts');
+    const ideas = await read('src/lib/ideas.ts');
+    expect(picker).toContain('collapsedTagLimit = 6');
+    expect(picker).toContain('ADD A TAG');
+    expect(picker).toContain('/3');
+    expect(picker).toContain('LuChevronDown');
+    expect(picker).toContain('LuInfo');
+    expect(picker).toContain('createPostTag');
+    expect(picker).toContain('tags.length >= 6');
+    expect(picker).toContain('const canCreateForPost = canCreate && tags.length < 6');
+    expect(picker).toContain('Members can create up to 3 tags');
+    expect(feed).toContain('collapsedTagLimit = 6');
+    expect(feed).toContain('selectedTags.every');
+    expect(feed).toContain('LuChevronDown');
+    expect(feed).toContain('usage_count');
+    expect(catalog).toContain('listPostTags');
+    expect(catalog).toContain('braga:tags-changed');
+    expect(ideas).toContain("rpc('list_post_tags'");
+    expect(ideas).toContain("rpc('create_post_tag'");
   });
 
   test('public events use external RSVP pages without exposing attendee counts', async () => {

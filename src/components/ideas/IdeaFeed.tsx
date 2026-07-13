@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuCheck, LuInfo, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { LuCheck, LuChevronDown, LuInfo, LuPencil, LuTrash2 } from 'react-icons/lu';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { supabase } from '@/lib/supabase';
 import { toUserMessage } from '@/lib/errors';
 import { attachPublicAuthors, getMyPostRelationships, updateOwnIdea, type PostRelationship } from '@/lib/ideas';
-import { RIP_CATEGORIES, RIP_TAGS, ripCategoryLabel, ripTagLabel } from '@/lib/rips';
+import { RIP_CATEGORIES, ripCategoryLabel, ripTagLabel } from '@/lib/rips';
 import { deleteIdea, getCurrentMemberRole, updateIdeaStatus, type MemberRole } from '@/lib/admin';
 import { isAnonymousUser } from '@/lib/anonymous';
 import type { Event, Idea, RipCategory, RipTag } from '@/lib/types';
@@ -13,11 +13,11 @@ import UpvoteButton from './UpvoteButton';
 import BookmarkButton, { type BookmarkAccess } from './BookmarkButton';
 import RipTaxonomyPicker from './RipTaxonomyPicker';
 import PostAuthorPreview from './PostAuthorPreview';
+import { usePostTagCatalog } from './usePostTagCatalog';
 
 type VoteCountRow = { idea_id: string; upvote_count: number };
 type VoteRow = { idea_id: string };
 type CategoryFilter = RipCategory | 'all';
-type TagFilter = RipTag | 'all';
 type FeedView = 'all' | 'mine' | 'bookmarks';
 type Props = {
   initialView?: FeedView;
@@ -27,6 +27,7 @@ type Props = {
 };
 
 const filterPill = 'min-h-11 rounded-full border px-3 py-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-limewash/70';
+const collapsedTagLimit = 6;
 
 function formatEventDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Lisbon' }).format(new Date(value));
@@ -67,8 +68,17 @@ async function hydrateIdeas(rows: Idea[], viewerId: string | null, relationships
   });
 }
 
-function TaxonomyBadges({ idea }: { idea: Idea }) {
-  return <div className="mb-3 flex flex-wrap gap-2"><span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">{ripCategoryLabel(idea.category)}</span>{idea.tags.map((tag) => <span key={tag} className="rounded-full border border-violet-300/25 bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-200">{ripTagLabel(tag)}</span>)}</div>;
+function TaxonomyBadges({ idea, tagLabels, onCategory, onTag }: { idea: Idea; tagLabels: Map<RipTag, string>; onCategory?: (category: RipCategory) => void; onTag?: (tag: RipTag) => void }) {
+  const categoryClass = 'rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash';
+  const tagClass = 'rounded-full border border-violet-300/25 bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-200';
+  return <div className="mb-3 flex flex-wrap gap-2">
+    {onCategory
+      ? <button type="button" className={`${categoryClass} transition hover:border-limewash/70 focus:outline-none focus:ring-2 focus:ring-limewash/60`} onClick={() => onCategory(idea.category)}>{ripCategoryLabel(idea.category)}</button>
+      : <span className={categoryClass}>{ripCategoryLabel(idea.category)}</span>}
+    {idea.tags.map((tag) => onTag
+      ? <button key={tag} type="button" className={`${tagClass} transition hover:border-violet-300/60 focus:outline-none focus:ring-2 focus:ring-violet-300/60`} onClick={() => onTag(tag)}>{tagLabels.get(tag) ?? ripTagLabel(tag)}</button>
+      : <span key={tag} className={tagClass}>{tagLabels.get(tag) ?? ripTagLabel(tag)}</span>)}
+  </div>;
 }
 
 function IdeaEditor({ idea, onClose, onSaved }: { idea: Idea; onClose: () => void; onSaved: () => void }) {
@@ -110,6 +120,7 @@ function participationCopy(access: BookmarkAccess) {
 }
 
 export default function IdeaFeed({ initialView = 'all', showIntro = true, showViewTabs = true, showFilters = true }: Props) {
+  const { tags: tagCatalog, error: tagCatalogError } = usePostTagCatalog();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [libraryAccess, setLibraryAccess] = useState<BookmarkAccess>('signed-out');
@@ -117,7 +128,8 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
   const [editing, setEditing] = useState<Idea | null>(null);
   const [view, setView] = useState<FeedView>(initialView);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
-  const [tagFilter, setTagFilter] = useState<TagFilter>('all');
+  const [selectedTags, setSelectedTags] = useState<RipTag[]>([]);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const loadSequence = useRef(0);
@@ -181,17 +193,25 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     };
   }, [load]);
 
+  const tagLabels = useMemo(() => new Map(tagCatalog.map((tag) => [tag.slug, tag.label])), [tagCatalog]);
+  const visibleFilterTags = filtersExpanded ? tagCatalog : tagCatalog.slice(0, collapsedTagLimit);
+  const categoryOptions = useMemo(() => {
+    const counts = new Map<RipCategory, number>();
+    for (const idea of ideas) counts.set(idea.category, (counts.get(idea.category) ?? 0) + 1);
+    return [...RIP_CATEGORIES].sort((left, right) => (counts.get(right.value) ?? 0) - (counts.get(left.value) ?? 0));
+  }, [ideas]);
+
   const filteredIdeas = useMemo(() => {
     const matching = ideas.filter((idea) => {
       if (view === 'mine' && !idea.viewer_is_author) return false;
       if (view === 'bookmarks' && !idea.viewer_has_bookmarked) return false;
       return (categoryFilter === 'all' || idea.category === categoryFilter)
-        && (tagFilter === 'all' || idea.tags.includes(tagFilter));
+        && selectedTags.every((tag) => idea.tags.includes(tag));
     });
     return view === 'bookmarks'
       ? [...matching].sort((left, right) => Date.parse(right.viewer_bookmarked_at ?? '1970-01-01') - Date.parse(left.viewer_bookmarked_at ?? '1970-01-01'))
       : matching;
-  }, [ideas, view, categoryFilter, tagFilter]);
+  }, [ideas, view, categoryFilter, selectedTags]);
 
   async function markDone(idea: Idea) {
     setError('');
@@ -214,10 +234,17 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     } : idea));
   }
 
+  function toggleTagFilter(tag: RipTag) {
+    setSelectedTags((current) => current.includes(tag)
+      ? current.filter((value) => value !== tag)
+      : [...current, tag]);
+  }
+
   function chooseView(nextView: FeedView) {
     setView(nextView);
     setCategoryFilter('all');
-    setTagFilter('all');
+    setSelectedTags([]);
+    setFiltersExpanded(false);
   }
 
   if (loading) return <p className="card p-6 text-braga-100" role="status">Loading posts…</p>;
@@ -236,8 +263,22 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
       </nav>}
 
       {showFilters && <section className="space-y-4 rounded-2xl border border-braga-300/15 p-5" aria-label="Filter posts">
-        <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-braga-300">Category</p><div className="mt-2 flex flex-wrap gap-2"><button type="button" className={`${filterPill} ${categoryFilter === 'all' ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100'}`} onClick={() => setCategoryFilter('all')}>All</button>{RIP_CATEGORIES.map((item) => <button key={item.value} type="button" className={`${filterPill} ${categoryFilter === item.value ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={categoryFilter === item.value} onClick={() => setCategoryFilter(item.value)}>{item.label}</button>)}</div></div>
-        <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-braga-300">Tags</p><div className="mt-2 flex flex-wrap gap-2"><button type="button" className={`${filterPill} ${tagFilter === 'all' ? 'border-violet-300 bg-violet-500/20 text-violet-100' : 'border-braga-300/30 text-braga-100'}`} onClick={() => setTagFilter('all')}>All</button>{RIP_TAGS.map((item) => <button key={item.value} type="button" className={`${filterPill} ${tagFilter === item.value ? 'border-violet-300 bg-violet-500/20 text-violet-100' : 'border-braga-300/30 text-braga-100 hover:border-violet-300/60'}`} aria-pressed={tagFilter === item.value} onClick={() => setTagFilter(item.value)}>{item.label}</button>)}</div></div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-braga-300">Category</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" className={`${filterPill} ${categoryFilter === 'all' ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100'}`} aria-pressed={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')}>All</button>
+            {categoryOptions.map((item) => <button key={item.value} type="button" className={`${filterPill} ${categoryFilter === item.value ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={categoryFilter === item.value} onClick={() => setCategoryFilter(item.value)}>{item.label}</button>)}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-braga-300">Tags {selectedTags.length > 0 && <span className="font-normal normal-case tracking-normal">· {selectedTags.length} selected</span>}</p>
+          <div id="post-tag-filters" className="mt-2 flex flex-wrap gap-2">
+            <button type="button" className={`${filterPill} ${selectedTags.length === 0 ? 'border-violet-300 bg-violet-500/20 text-violet-100' : 'border-braga-300/30 text-braga-100'}`} aria-pressed={selectedTags.length === 0} onClick={() => setSelectedTags([])}>All</button>
+            {visibleFilterTags.map((item) => <button key={item.slug} type="button" className={`${filterPill} ${selectedTags.includes(item.slug) ? 'border-violet-300 bg-violet-500/20 text-violet-100' : 'border-braga-300/30 text-braga-100 hover:border-violet-300/60'}`} aria-pressed={selectedTags.includes(item.slug)} onClick={() => toggleTagFilter(item.slug)} title={`${item.usage_count} post${item.usage_count === 1 ? '' : 's'}`}>{item.label}</button>)}
+          </div>
+          {tagCatalog.length > collapsedTagLimit && <button type="button" className="mx-auto mt-2 flex min-h-8 items-center justify-center rounded-full px-4 text-braga-300 transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-violet-300/60" aria-expanded={filtersExpanded} aria-controls="post-tag-filters" aria-label={filtersExpanded ? 'Show fewer tag filters' : 'Show all tag filters'} onClick={() => setFiltersExpanded((value) => !value)}><LuChevronDown className={`h-4 w-4 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} aria-hidden="true" /></button>}
+          {tagCatalogError && <p className="mt-3 text-sm text-amber-200" role="alert">{tagCatalogError}</p>}
+        </div>
       </section>}
 
       {filteredIdeas.map((idea) => {
@@ -246,7 +287,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
         return <article key={idea.id} className="card relative flex flex-wrap gap-4 p-5 sm:flex-nowrap">
           <UpvoteButton ideaId={idea.id} initialCount={idea.upvote_count ?? 0} initialVoted={idea.viewer_has_voted ?? false} disabled={idea.status === 'closed'} />
           <div className={`min-w-0 flex-1 ${contentPadding}`}>
-            <TaxonomyBadges idea={idea} />
+            <TaxonomyBadges idea={idea} tagLabels={tagLabels} onCategory={showFilters ? setCategoryFilter : undefined} onTag={showFilters ? toggleTagFilter : undefined} />
             <div className="flex flex-wrap items-center gap-2"><a href={`/ideas/${idea.slug}`} className="text-xl font-bold text-white hover:text-limewash">{idea.title}</a>{idea.status === 'closed' && <span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">Done</span>}</div>
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-braga-100">{idea.body}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-braga-300"><span>{idea.month_key}</span><span aria-hidden="true">·</span><PostAuthorPreview profile={idea.profiles} /></div>
