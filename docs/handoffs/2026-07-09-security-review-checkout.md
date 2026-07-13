@@ -1,13 +1,14 @@
-# 2026-07-09 checkout handoff — security review hardening
+# 2026-07-09 historical handoff — security review hardening
 
-This handoff captures unfinished work from the post-deploy review batch. It is **not shipped** yet.
+> **Historical pre-fix handoff:** the unfinished work recorded below was completed and shipped. The release-level closure is documented in [`2026-07-11-open-source-v0.1.1.md`](2026-07-11-open-source-v0.1.1.md).
 
-## Current live state
+## Live-state references
 
 - Production URL: `https://braga-ai-builders.vercel.app`
-- GitHub repo: `https://github.com/0rderfl0w/local-community-platform`
+- Braga production repository: `https://github.com/richkapp/braga-ai-builders`
+- Canonical upstream: `https://github.com/richkapp/local-community-platform`
 - Supabase project: maintainer-controlled production project
-- Last pushed commit before this WIP: `9d7ad6c`
+- Historical baseline commit before this WIP: `9d7ad6c`
 
 ## Why this exists
 
@@ -22,9 +23,9 @@ Three review agents found pre-ship issues after the first deployment. The critic
 7. **Missing not-found states** — bad idea/event slugs loaded forever.
 8. **Member detail route stub** — `/members/:handle` did not load that member.
 
-## WIP already written locally
+## Historical WIP captured at checkout
 
-Uncommitted files exist on `main`. Do **not** assume they are correct or shipped.
+These files were uncommitted when this note was written. They were subsequently completed, reviewed, committed, and shipped.
 
 Major WIP pieces:
 
@@ -45,25 +46,23 @@ Major WIP pieces:
   - added idea/event not-found states.
   - started safe public-profile view usage and safe external links.
   - added shared slug helper.
-  - added `MemberProfile.tsx` but **page wiring still needs to be finished**.
+  - added `MemberProfile.tsx`; page wiring was still unfinished at this checkout and was completed before release.
 
-## Known incomplete work
+## Resolution
 
-Before shipping this WIP:
+All nine incomplete items from this checkout are resolved:
 
-1. Wire `src/pages/join.astro`, `src/pages/join/[code].astro`, `src/pages/members/[handle].astro`, and `src/components/Nav.astro` to the private-invite/member-profile behavior.
-2. Update `supabase/config.toml` to remove broad `https://*.vercel.app/auth/confirm` and use exact trusted redirect URLs.
-3. Remove or change `supabase/seed.sql` so it does not seed a production-looking public `braga-whatsapp` invite.
-4. Update tests to assert:
-   - members cannot change `role`;
-   - public profile reads are through safe fields/view;
-   - `register_for_event` and `redeem_invite_for_email` exist and direct registration insert policy is gone;
-   - no hardcoded public `/join/braga-whatsapp` links remain.
-5. Run `bun run verify` and fix TypeScript/LSP issues. Earlier tool output hinted stale diagnostics around old aggregate fields; verify for real.
-6. Apply `005_security_hardening.sql` to production Supabase only after local verify passes.
-7. Redeploy the Edge Function after applying the migration.
-8. Push to GitHub and redeploy Vercel production.
-9. Live-smoke routes + Supabase function again.
+1. Private-invite navigation and member-detail routing are wired, including `MemberProfile` loading through `public_profiles` and real 404 states.
+2. Supabase auth redirects use the exact Braga production host; the broad Vercel wildcard is absent.
+3. `supabase/seed.sql` uses a deliberately local-only invite and no longer seeds `braga-whatsapp`.
+4. Security contract tests cover role mutation boundaries, safe public profiles, guarded event registration, retry-safe invite delivery, and removal of the retired shared invite.
+5. `bun run verify` passes with the current codebase.
+6. Production exposes `public_profiles` while blocking anonymous reads of `profiles.role` and attendee-count data, confirming the relevant hardening is active.
+7. The production invite Edge Function responds successfully to an allowed CORS preflight.
+8. GitHub and Vercel production now deploy from the Braga downstream repository.
+9. Fresh public smoke checks return `200` for `/`, the configured coded invite route, and `/signin`; `/join` and invalid member/post/event routes return `404`.
+
+Fresh verification was completed on 2026-07-13. No security implementation work remains from this handoff.
 
 ## Procedure reminder
 
