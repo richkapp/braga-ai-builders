@@ -8,6 +8,8 @@ Member-created post tags:
 - Let active members create up to three tags over the lifetime of their account, with duplicate protection, clear naming rules, and no delete-or-reset path.
 - Added category-plus-multiple-tag filtering while keeping categories fixed as Idea, Resource, and Perspective.
 - Replaced the fixed post-tag database allowlist with a private registry and narrow RPCs that validate both member and anonymous post writes.
+- Serialized tag creation with account suspension, normalized any legacy duplicate tag arrays, and kept the fixed system tags available if the catalog RPC is temporarily unavailable.
+- Exposed selected state and filtering intent on clickable post badges, and stopped desktop-only author previews from widening the mobile feed.
 
 Member post library:
 

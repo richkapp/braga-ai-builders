@@ -68,16 +68,27 @@ async function hydrateIdeas(rows: Idea[], viewerId: string | null, relationships
   });
 }
 
-function TaxonomyBadges({ idea, tagLabels, onCategory, onTag }: { idea: Idea; tagLabels: Map<RipTag, string>; onCategory?: (category: RipCategory) => void; onTag?: (tag: RipTag) => void }) {
+function TaxonomyBadges({ idea, tagLabels, activeCategory, selectedTags, onCategory, onTag }: {
+  idea: Idea;
+  tagLabels: Map<RipTag, string>;
+  activeCategory: CategoryFilter;
+  selectedTags: RipTag[];
+  onCategory?: (category: RipCategory) => void;
+  onTag?: (tag: RipTag) => void;
+}) {
   const categoryClass = 'rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash';
   const tagClass = 'rounded-full border border-violet-300/25 bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-200';
+  const categoryLabel = ripCategoryLabel(idea.category);
   return <div className="mb-3 flex flex-wrap gap-2">
     {onCategory
-      ? <button type="button" className={`${categoryClass} transition hover:border-limewash/70 focus:outline-none focus:ring-2 focus:ring-limewash/60`} onClick={() => onCategory(idea.category)}>{ripCategoryLabel(idea.category)}</button>
-      : <span className={categoryClass}>{ripCategoryLabel(idea.category)}</span>}
-    {idea.tags.map((tag) => onTag
-      ? <button key={tag} type="button" className={`${tagClass} transition hover:border-violet-300/60 focus:outline-none focus:ring-2 focus:ring-violet-300/60`} onClick={() => onTag(tag)}>{tagLabels.get(tag) ?? ripTagLabel(tag)}</button>
-      : <span key={tag} className={tagClass}>{tagLabels.get(tag) ?? ripTagLabel(tag)}</span>)}
+      ? <button type="button" className={`${categoryClass} transition hover:border-limewash/70 focus:outline-none focus:ring-2 focus:ring-limewash/60`} aria-label={`Filter posts by category: ${categoryLabel}`} aria-pressed={activeCategory === idea.category} onClick={() => onCategory(idea.category)}>{categoryLabel}</button>
+      : <span className={categoryClass}>{categoryLabel}</span>}
+    {idea.tags.map((tag) => {
+      const label = tagLabels.get(tag) ?? ripTagLabel(tag);
+      return onTag
+        ? <button key={tag} type="button" className={`${tagClass} transition hover:border-violet-300/60 focus:outline-none focus:ring-2 focus:ring-violet-300/60`} aria-label={`Filter posts by tag: ${label}`} aria-pressed={selectedTags.includes(tag)} onClick={() => onTag(tag)}>{label}</button>
+        : <span key={tag} className={tagClass}>{label}</span>;
+    })}
   </div>;
 }
 
@@ -287,7 +298,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
         return <article key={idea.id} className="card relative flex flex-wrap gap-4 p-5 sm:flex-nowrap">
           <UpvoteButton ideaId={idea.id} initialCount={idea.upvote_count ?? 0} initialVoted={idea.viewer_has_voted ?? false} disabled={idea.status === 'closed'} />
           <div className={`min-w-0 flex-1 ${contentPadding}`}>
-            <TaxonomyBadges idea={idea} tagLabels={tagLabels} onCategory={showFilters ? setCategoryFilter : undefined} onTag={showFilters ? toggleTagFilter : undefined} />
+            <TaxonomyBadges idea={idea} tagLabels={tagLabels} activeCategory={categoryFilter} selectedTags={selectedTags} onCategory={showFilters ? setCategoryFilter : undefined} onTag={showFilters ? toggleTagFilter : undefined} />
             <div className="flex flex-wrap items-center gap-2"><a href={`/ideas/${idea.slug}`} className="text-xl font-bold text-white hover:text-limewash">{idea.title}</a>{idea.status === 'closed' && <span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">Done</span>}</div>
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-braga-100">{idea.body}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-braga-300"><span>{idea.month_key}</span><span aria-hidden="true">·</span><PostAuthorPreview profile={idea.profiles} /></div>

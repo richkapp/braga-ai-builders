@@ -23,7 +23,7 @@ export default function PostAuthorPreview({ profile }: { profile: PublicProfile 
       <a href={profileHref} className="font-bold uppercase tracking-[0.16em] text-braga-300 underline-offset-4 transition hover:text-limewash hover:underline focus-visible:text-limewash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-limewash/70" aria-label={`View ${profile.display_name}'s member profile`}>
         {profile.display_name}
       </a>
-      <span className="pointer-events-none invisible absolute bottom-full left-0 z-50 w-72 pb-3 opacity-0 transition duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100">
+      <span className="pointer-events-none invisible absolute bottom-full left-0 z-50 hidden w-72 pb-3 opacity-0 transition duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100 sm:block">
         <span className="block rounded-2xl border border-braga-300/25 bg-ink-900 p-4 text-left shadow-2xl shadow-black/40">
           <span className="flex items-center gap-3">
             {profile.avatar_url && isHttpUrl(profile.avatar_url) ? (
