@@ -19,7 +19,28 @@ type PublicAuthor = {
 export type IdeaPostingMode = 'anonymous' | 'account';
 export type RipInput = { title: string; body: string; category: RipCategory; tags: RipTag[] };
 export type CreateRipInput = RipInput & { mode: IdeaPostingMode };
+export type PostRelationship = {
+  idea_id: string;
+  viewer_is_author: boolean;
+  viewer_has_bookmarked: boolean;
+  bookmarked_at: string | null;
+};
 export const PUBLIC_IDEA_COLUMNS = 'id, slug, title, body, month_key, status, created_at, updated_at, category, tags';
+
+export async function getMyPostRelationships(ideaId?: string): Promise<PostRelationship[]> {
+  const { data, error } = await supabase.rpc('get_my_post_relationships', ideaId ? { target_idea_id: ideaId } : {});
+  if (error) throw error;
+  return (data ?? []) as PostRelationship[];
+}
+
+export async function setIdeaBookmark(ideaId: string, shouldBookmark: boolean) {
+  const { data, error } = await supabase.rpc('set_idea_bookmark', {
+    target_idea_id: ideaId,
+    should_bookmark: shouldBookmark
+  });
+  if (error) throw error;
+  return Boolean(data);
+}
 
 export async function attachPublicAuthors(ideas: Idea[]): Promise<Idea[]> {
   const ideaIds = ideas.map((idea) => idea.id);

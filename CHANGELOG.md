@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Member post library:
+
+- Reworked Settings into Profile, Invites, My posts, and My bookmarks pill tabs so members can reach each section without scrolling through unrelated forms.
+- Added My posts and My bookmarks views to the public Posts page while preserving author-only editing for owned open posts.
+- Added private, account-synced post bookmarks with bookmark controls on feed and detail views.
+- Renamed the ambiguous invitation Pending state to Claim in progress and explained that the 24-hour reservation starts only after an authentication email is requested.
+
 Rolling member invitations:
 
 - Replaced the public reusable account-creation route with private URLs shared directly through WhatsApp, Facebook, Signal, or any other channel, and revoked legacy reusable codes during migration.

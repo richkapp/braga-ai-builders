@@ -105,7 +105,7 @@ export default function InviteManager() {
               <div className="min-w-0">
                 <p className="font-semibold text-white">{invite.creator_label}</p>
                 <p className="mt-1 break-all font-mono text-xs text-braga-200">/join/{invite.code}</p>
-                <p className="mt-2 text-xs capitalize text-braga-300">{invite.status}</p>
+                <p className="mt-2 text-xs text-braga-300">{invite.status === 'pending' ? 'Claim in progress' : invite.status.charAt(0).toUpperCase() + invite.status.slice(1)}</p>
               </div>
               <div className="mt-3 flex flex-wrap gap-2 md:mt-0">
                 {invite.status === 'available' && <button type="button" className="btn-secondary" onClick={() => copy(invite.code)}>Copy URL</button>}

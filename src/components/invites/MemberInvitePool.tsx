@@ -124,6 +124,9 @@ export default function MemberInvitePool() {
           <p className="mt-2 max-w-2xl text-sm leading-6 text-braga-100">
             Share these individual links wherever your community already talks. Each link welcomes one new member and is replaced automatically after they join.
           </p>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-braga-200">
+            A link is reserved for up to 24 hours after they request their authentication email—not when they simply open it.
+          </p>
         </div>
         <button type="button" className="btn-secondary inline-flex min-h-11 items-center justify-center gap-2" onClick={() => void load()} disabled={refreshing}>
           <LuRefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
@@ -133,7 +136,7 @@ export default function MemberInvitePool() {
 
       <div className="flex flex-wrap gap-3 text-sm" aria-live="polite">
         <span className="rounded-full bg-limewash/15 px-3 py-1 font-semibold text-limewash">{availableCount} available</span>
-        <span className="rounded-full bg-amber-300/10 px-3 py-1 font-semibold text-amber-200">{pendingCount} pending</span>
+        <span className="rounded-full bg-amber-300/10 px-3 py-1 font-semibold text-amber-200">{pendingCount} claim in progress</span>
         <span className="text-braga-200">Five unconsumed links stay in your pool automatically.</span>
       </div>
 
@@ -152,11 +155,11 @@ export default function MemberInvitePool() {
                     <LuTicket className="h-5 w-5 shrink-0 text-limewash" aria-hidden="true" />
                     <h3 className="font-bold text-white">Invite {index + 1}</h3>
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${pending ? 'bg-amber-300/10 text-amber-200' : 'bg-limewash/15 text-limewash'}`}>
-                      {pending ? 'Pending' : 'Available'}
+                      {pending ? 'Claim in progress' : 'Available'}
                     </span>
                   </div>
                   <p className="mt-2 break-all font-mono text-xs leading-5 text-braga-200">{url}</p>
-                  {pending && <p className="mt-2 flex items-center gap-2 text-xs text-amber-100/80"><LuClock3 aria-hidden="true" /> Waiting for your friend to confirm their account.</p>}
+                  {pending && <p className="mt-2 flex items-center gap-2 text-xs text-amber-100/80"><LuClock3 aria-hidden="true" /> Authentication email requested. This link is reserved for up to 24 hours while they confirm their account.</p>}
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                   <button type="button" className="btn-secondary inline-flex min-h-11 items-center gap-2" onClick={() => void copyInvite(invite)} disabled={pending}>
