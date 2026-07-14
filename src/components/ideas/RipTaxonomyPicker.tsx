@@ -3,12 +3,14 @@ import { LuChevronDown, LuInfo, LuPlus } from 'react-icons/lu';
 import { RIP_CATEGORIES } from '@/lib/rips';
 import { createPostTag } from '@/lib/ideas';
 import { toUserMessage } from '@/lib/errors';
-import type { RipCategory, RipTag } from '@/lib/types';
-import { usePostTagCatalog } from './usePostTagCatalog';
+import type { PostTagCatalogItem, RipCategory, RipTag } from '@/lib/types';
 
 type Props = {
   category: RipCategory;
   tags: RipTag[];
+  catalog: PostTagCatalogItem[];
+  catalogLoading: boolean;
+  catalogError: string;
   onCategoryChange: (category: RipCategory) => void;
   onTagsChange: (tags: RipTag[]) => void;
 };
@@ -16,8 +18,7 @@ type Props = {
 const basePill = 'rounded-full border px-3 py-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-limewash/70';
 const collapsedTagLimit = 6;
 
-export default function RipTaxonomyPicker({ category, tags, onCategoryChange, onTagsChange }: Props) {
-  const { tags: catalog, loading, error: catalogError } = usePostTagCatalog();
+export default function RipTaxonomyPicker({ category, tags, catalog, catalogLoading, catalogError, onCategoryChange, onTagsChange }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -81,7 +82,7 @@ export default function RipTaxonomyPicker({ category, tags, onCategoryChange, on
 
       <fieldset>
         <legend className="label">Tags <span className="font-normal text-braga-300">(choose up to 6 · {tags.length} selected)</span></legend>
-        {loading && catalog.length === 0
+        {catalogLoading && catalog.length === 0
           ? <p className="mt-2 text-sm text-braga-300" role="status">Loading tags…</p>
           : <>
             <div id={disclosureId} className="mt-2 flex flex-wrap gap-2">

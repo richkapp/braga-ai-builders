@@ -3,13 +3,12 @@ import { LuCheck, LuChevronDown, LuInfo, LuMessageCircle, LuPencil, LuTrash2 } f
 import type { FormSubmitEvent } from '@/lib/dom';
 import { supabase } from '@/lib/supabase';
 import { toUserMessage } from '@/lib/errors';
-import { attachPublicAuthors, getMyPostRelationships, updateOwnIdea, type PostRelationship } from '@/lib/ideas';
+import { listPostFeed, updateOwnIdea } from '@/lib/ideas';
 import { RIP_CATEGORIES, ripCategoryLabel, ripTagLabel } from '@/lib/rips';
-import { deleteIdea, getCurrentMemberRole, updateIdeaStatus, type MemberRole } from '@/lib/admin';
-import { isAnonymousUser } from '@/lib/anonymous';
+import { deleteIdea, updateIdeaStatus } from '@/lib/admin';
 import { ideaMatchesMember, rankPostingMembers, scopeIdeasToPostView, type PostFeedView } from '@/lib/postMemberFilters';
-import { listIdeaCommentCounts } from '@/lib/postComments';
-import type { Event, Idea, RipCategory, RipTag } from '@/lib/types';
+
+import type { Event, Idea, PostTagCatalogItem, RipCategory, RipTag } from '@/lib/types';
 import AuthRequired from '@/components/auth/AuthRequired';
 import UpvoteButton from './UpvoteButton';
 import BookmarkButton, { type BookmarkAccess } from './BookmarkButton';
@@ -21,8 +20,6 @@ import SharePostButton from './SharePostButton';
 
 import { usePostTagCatalog } from './usePostTagCatalog';
 
-type VoteCountRow = { idea_id: string; upvote_count: number };
-type VoteRow = { idea_id: string };
 type CategoryFilter = RipCategory | 'all';
 type Props = {
   initialView?: PostFeedView;
@@ -39,45 +36,6 @@ function formatEventDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Lisbon' }).format(new Date(value));
 }
 
-async function listVisibleIdeas(ids?: string[]) {
-  if (ids && ids.length === 0) return [];
-  let request = supabase.rpc('list_visible_ideas').order('created_at', { ascending: false });
-  if (ids) request = request.in('id', ids);
-  const { data, error } = await request;
-  if (error) throw error;
-  return (data ?? []) as Idea[];
-}
-
-async function hydrateIdeas(rows: Idea[], viewerId: string | null, relationships: PostRelationship[]) {
-  const ids = rows.map((idea) => idea.id);
-  if (ids.length === 0) return rows;
-  const [{ data: counts, error: countError }, commentCounts] = await Promise.all([
-    supabase.from('idea_vote_counts').select('idea_id, upvote_count').in('idea_id', ids),
-    listIdeaCommentCounts(ids).catch(() => [])
-  ]);
-  if (countError) throw countError;
-  let voted = new Set<string>();
-  if (viewerId) {
-    const { data: votes, error: voteError } = await supabase.from('idea_votes').select('idea_id').eq('user_id', viewerId).in('idea_id', ids);
-    if (voteError) throw voteError;
-    voted = new Set(((votes ?? []) as VoteRow[]).map((vote) => vote.idea_id));
-  }
-  const countById = new Map(((counts ?? []) as VoteCountRow[]).map((row) => [row.idea_id, row.upvote_count]));
-  const commentCountById = new Map(commentCounts.map((row) => [row.idea_id, row.comment_count]));
-  const relationshipById = new Map(relationships.map((row) => [row.idea_id, row]));
-  return rows.map((idea) => {
-    const relationship = relationshipById.get(idea.id);
-    return {
-      ...idea,
-      upvote_count: countById.get(idea.id) ?? 0,
-      comment_count: commentCountById.get(idea.id) ?? 0,
-      viewer_has_voted: voted.has(idea.id),
-      viewer_is_author: relationship?.viewer_is_author ?? false,
-      viewer_has_bookmarked: relationship?.viewer_has_bookmarked ?? false,
-      viewer_bookmarked_at: relationship?.bookmarked_at ?? null
-    };
-  });
-}
 
 function TaxonomyBadges({ idea, tagLabels, activeCategory, selectedTags, onCategory, onTag }: {
   idea: Idea;
@@ -103,7 +61,14 @@ function TaxonomyBadges({ idea, tagLabels, activeCategory, selectedTags, onCateg
   </div>;
 }
 
-function IdeaEditor({ idea, onClose, onSaved }: { idea: Idea; onClose: () => void; onSaved: () => void }) {
+function IdeaEditor({ idea, tagCatalog, tagCatalogLoading, tagCatalogError, onClose, onSaved }: {
+  idea: Idea;
+  tagCatalog: PostTagCatalogItem[];
+  tagCatalogLoading: boolean;
+  tagCatalogError: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [title, setTitle] = useState(idea.title);
   const [body, setBody] = useState(idea.body);
   const [category, setCategory] = useState<RipCategory>(idea.category);
@@ -119,7 +84,7 @@ function IdeaEditor({ idea, onClose, onSaved }: { idea: Idea; onClose: () => voi
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink-950/80 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(click) => { if (click.target === click.currentTarget) onClose(); }}>
       <form onSubmit={submit} className="card my-6 w-full max-w-2xl space-y-4 p-6" role="dialog" aria-modal="true" aria-labelledby="edit-idea-title">
         <div className="flex items-start justify-between gap-4"><div><h2 id="edit-idea-title" className="text-2xl font-black text-white">Edit post</h2><p className="mt-1 text-sm text-braga-200">Update its category, tags, title, or details.</p></div><button type="button" className="min-h-11 text-sm text-braga-200 hover:text-white" onClick={onClose}>Close</button></div>
-        <RipTaxonomyPicker category={category} tags={tags} onCategoryChange={setCategory} onTagsChange={setTags} />
+        <RipTaxonomyPicker category={category} tags={tags} catalog={tagCatalog} catalogLoading={tagCatalogLoading} catalogError={tagCatalogError} onCategoryChange={setCategory} onTagsChange={setTags} />
         <div><label className="label" htmlFor="edit-idea-name">Title</label><input id="edit-idea-name" className="input mt-2" value={title} onChange={(change) => setTitle(change.target.value)} minLength={4} maxLength={120} required /></div>
         <div><label className="label" htmlFor="edit-idea-body">Details</label><textarea id="edit-idea-body" className="input mt-2 min-h-40" value={body} onChange={(change) => setBody(change.target.value)} minLength={10} maxLength={2000} required /></div>
         <button className="btn-primary w-full" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
@@ -142,7 +107,7 @@ function participationCopy(access: BookmarkAccess) {
 }
 
 export default function IdeaFeed({ initialView = 'all', showIntro = true, showViewTabs = true, showFilters = true, layout = 'default' }: Props) {
-  const { tags: tagCatalog, error: tagCatalogError } = usePostTagCatalog();
+  const { tags: tagCatalog, loading: tagCatalogLoading, error: tagCatalogError } = usePostTagCatalog();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [libraryAccess, setLibraryAccess] = useState<BookmarkAccess>('signed-out');
@@ -166,40 +131,15 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
       const eventRequest = showIntro
         ? supabase.from('events').select('*').in('status', ['published', 'completed']).gte('starts_at', new Date().toISOString()).order('starts_at', { ascending: true }).limit(1).maybeSingle()
         : Promise.resolve({ data: null, error: null });
-      const [publicIdeas, userResponse, eventResponse] = await Promise.all([
-        initialView === 'all' ? listVisibleIdeas() : Promise.resolve(null),
-        supabase.auth.getUser(),
+      const [feedResponse, eventResponse] = await Promise.all([
+        listPostFeed(initialView),
         eventRequest
       ]);
       if (eventResponse.error) throw eventResponse.error;
-
-      const user = userResponse.data.user;
-      const accountUserId = user && !isAnonymousUser(user) ? user.id : null;
-      let memberRole: MemberRole | null = null;
-      let relationships: PostRelationship[] = [];
-      if (accountUserId) {
-        [memberRole, relationships] = await Promise.all([
-          getCurrentMemberRole(),
-          getMyPostRelationships()
-        ]);
-        if (!memberRole) relationships = [];
-      }
-
-      const activeMember = Boolean(memberRole);
-      const relationshipIds = initialView === 'mine'
-        ? relationships.filter((relationship) => relationship.viewer_is_author).map((relationship) => relationship.idea_id)
-        : relationships.filter((relationship) => relationship.viewer_has_bookmarked).map((relationship) => relationship.idea_id);
-      const ideaRows = initialView === 'all'
-        ? publicIdeas ?? []
-        : activeMember ? await listVisibleIdeas(relationshipIds) : [];
-
-      const withAuthors = await attachPublicAuthors(ideaRows);
       if (sequence !== loadSequence.current) return;
-      const hydratedIdeas = await hydrateIdeas(withAuthors, accountUserId, relationships);
-      if (sequence !== loadSequence.current) return;
-      setIdeas(hydratedIdeas);
-      setLibraryAccess(activeMember ? 'active' : accountUserId ? 'inactive' : 'signed-out');
-      setIsAdmin(memberRole === 'admin' || memberRole === 'super_admin');
+      setIdeas(feedResponse.posts);
+      setLibraryAccess(feedResponse.viewer.access);
+      setIsAdmin(feedResponse.viewer.role === 'admin' || feedResponse.viewer.role === 'super_admin');
       setNextEvent((eventResponse.data as Event | null) ?? null);
     } catch (caught) {
       if (sequence === loadSequence.current) setError(toUserMessage('ideas-feed', caught));
@@ -283,7 +223,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
 
   if (layout === 'sidebar' && (loading || error)) {
     return <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start" aria-label="Post controls"><IdeaComposer /></aside>
+      <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start" aria-label="Post controls"><IdeaComposer tagCatalog={tagCatalog} tagCatalogLoading={tagCatalogLoading} tagCatalogError={tagCatalogError} /></aside>
       <div className="min-w-0">{loading ? <p className="card p-6 text-braga-100" role="status">Loading posts…</p> : <p className="error-message" role="alert">{error}</p>}</div>
     </div>;
   }
@@ -371,13 +311,13 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     })}
     {ideas.length === 0 && <p className="card p-6 text-braga-100">No posts yet. Be the first to add one.</p>}
     {ideas.length > 0 && filteredIdeas.length === 0 && <p className="card p-6 text-braga-100">{view === 'mine' ? 'You have not published any posts with your member profile yet.' : view === 'bookmarks' ? 'You have not bookmarked any posts yet.' : 'No posts match those filters.'}</p>}
-    {editing && <IdeaEditor idea={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(false); }} />}
+    {editing && <IdeaEditor idea={editing} tagCatalog={tagCatalog} tagCatalogLoading={tagCatalogLoading} tagCatalogError={tagCatalogError} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(false); }} />}
   </div>;
 
   if (layout === 'sidebar') {
     return <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start" aria-label="Post controls">
-        <IdeaComposer />
+        <IdeaComposer tagCatalog={tagCatalog} tagCatalogLoading={tagCatalogLoading} tagCatalogError={tagCatalogError} />
         {controls}
       </aside>
       <div className="min-w-0 space-y-5">{intro}{feed}</div>

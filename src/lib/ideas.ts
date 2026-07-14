@@ -27,7 +27,32 @@ export type PostRelationship = {
   viewer_has_bookmarked: boolean;
   bookmarked_at: string | null;
 };
+export type PostFeedQueryView = 'all' | 'mine' | 'bookmarks';
+export type PostFeedAccess = 'signed-out' | 'inactive' | 'active';
+export type PostFeedRole = 'member' | 'admin' | 'super_admin' | null;
+export type PostFeedResult = {
+  posts: Idea[];
+  viewer: {
+    access: PostFeedAccess;
+    role: PostFeedRole;
+  };
+};
 export const PUBLIC_IDEA_COLUMNS = 'id, slug, title, body, month_key, status, created_at, updated_at, category, tags';
+
+export async function listPostFeed(view: PostFeedQueryView = 'all'): Promise<PostFeedResult> {
+  const { data, error } = await supabase.rpc('list_post_feed', { p_view: view });
+  if (error) throw error;
+  const result = (data ?? {}) as Partial<PostFeedResult>;
+  const access = result.viewer?.access;
+  const role = result.viewer?.role;
+  return {
+    posts: Array.isArray(result.posts) ? result.posts : [],
+    viewer: {
+      access: access === 'active' || access === 'inactive' ? access : 'signed-out',
+      role: role === 'member' || role === 'admin' || role === 'super_admin' ? role : null
+    }
+  };
+}
 
 export async function listPostTags(): Promise<PostTagCatalogItem[]> {
   const { data, error } = await supabase.rpc('list_post_tags');

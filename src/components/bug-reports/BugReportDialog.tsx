@@ -1,11 +1,15 @@
-import { type SyntheticEvent, useRef, useState } from 'react';
+import { type SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { submitBugReport } from '@/lib/bugReports';
 
-export default function BugReportDialog() {
+export default function BugReportDialog({ openOnMount = false }: { openOnMount?: boolean }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    if (openOnMount) dialogRef.current?.showModal();
+  }, [openOnMount]);
 
   function open() {
     setError('');
