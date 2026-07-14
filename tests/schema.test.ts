@@ -41,3 +41,10 @@ test('one current ballot per member per community vote is enforced', () => {
   expect(schema).toContain('unique (vote_id, user_id)');
   expect(schema).toContain('foreign key (vote_id, option_id)');
 });
+
+test('participated community votes keep a permanent database latch', () => {
+  expect(schema).toContain('add column first_ballot_at timestamptz');
+  expect(schema).toContain('set first_ballot_at = first_ballot.created_at');
+  expect(schema).toContain('create trigger protect_community_vote_after_ballot');
+  expect(schema).toContain('create trigger protect_community_vote_options_after_ballot');
+});

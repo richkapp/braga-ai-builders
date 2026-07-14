@@ -8,6 +8,7 @@ Community voting:
 - Let active signed-in members cast one choice, change it until closure, and opt into anonymous display without weakening one-member-one-ballot enforcement.
 - Added organizer-only draft, preview, publish, pre-ballot edit, early-close, and safe-delete controls for votes with 2–10 ordered options and required deadlines.
 - Kept voting tables private behind narrow RPCs that serialize edits, closure, and ballot changes while preventing anonymous voter identities from reaching application surfaces.
+- Hardened deadlines against lock-wait races with wall-clock checks, and latched the first accepted ballot so vote content and options stay permanent even if ballot attribution is later removed.
 
 Branding:
 
