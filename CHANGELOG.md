@@ -16,6 +16,7 @@ Posts:
 - Preserved replies when an author or parent comment is removed, made feed comment counts fail soft, and restored reliable `#comments` navigation after async detail loading.
 - Hardened participation after review: attribution now stays correct through auth transitions, `#comments` scrolls only once, deep mobile threads retain readable width, cancelled composers restore keyboard focus, suspended super admins cannot race a setting change, and deleted members remain distinct from anonymous posters.
 - Added native post sharing with clipboard fallback beside the feed comment count and the detail-page bookmark action.
+- Corrected post sharing to send only the canonical post link, without appending the post title or community name.
 - Renamed the signed-in Settings navigation label and page heading to Dashboard.
 - Kept post creation available through feed refreshes and read failures, and prevented magic-link requests from racing backward navigation in the composer.
 

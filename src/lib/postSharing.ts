@@ -9,19 +9,16 @@ type PostShareInput = {
   client: ShareClient;
   origin: string;
   slug: string;
-  title: string;
 };
 
-export function buildPostShareData(origin: string, slug: string, title: string): ShareData {
+export function buildPostShareData(origin: string, slug: string): ShareData {
   return {
-    title,
-    text: `${title} — Braga AI Builders`,
     url: new URL(`/posts/${slug}`, origin).toString()
   };
 }
 
-export async function sharePost({ client, origin, slug, title }: PostShareInput): Promise<PostShareOutcome> {
-  const data = buildPostShareData(origin, slug, title);
+export async function sharePost({ client, origin, slug }: PostShareInput): Promise<PostShareOutcome> {
+  const data = buildPostShareData(origin, slug);
 
   if (client.share) {
     try {

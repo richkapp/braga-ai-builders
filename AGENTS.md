@@ -40,6 +40,7 @@ Core scope:
 - Do not use member emails for marketing.
 - Keep post voting upvote-only.
 - Keep post comments Reddit-like and minimal: start with a collapsed **Leave a Comment** control; expose only text, anonymous attribution, cancel, post, upvote, and reply; preserve nested replies without adding sorting, search, media/GIFs, formatting tools, awards, or sharing.
+- Post sharing must send only the canonical post URL. Do not include a title or text payload because receiving apps may concatenate those fields into the copied message.
 - Keep event creation, moderation, and full member access organizer-only.
 - Use service-role keys only inside trusted Edge Functions or maintainer operations.
 - Explicitly grant `service_role` the required privileges on every newly created private table; earlier `grant ... on all tables` statements apply only to tables that existed when they ran.
