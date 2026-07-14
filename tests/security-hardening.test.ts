@@ -72,6 +72,30 @@ describe('delivery security contracts', () => {
     expect(migration).not.toContain('grant update (avatar_path)');
   });
 
+  test('community voting is RPC-only, identity-private, and serialized across lifecycle changes', async () => {
+    const migration = await read('supabase/migrations/029_community_voting.sql');
+    const publicProjection = migration.slice(
+      migration.indexOf('create or replace function public.list_public_community_votes()'),
+      migration.indexOf('create or replace function public.admin_list_community_votes()')
+    );
+    expect(migration).toContain('revoke all on table public.community_votes from public, anon, authenticated');
+    expect(migration).toContain('revoke all on table public.community_vote_options from public, anon, authenticated');
+    expect(migration).toContain('revoke all on table public.community_vote_ballots from public, anon, authenticated');
+    expect(migration).toContain('grant execute on function public.list_public_community_votes() to anon, authenticated');
+    expect(migration).toContain('grant execute on function public.submit_community_ballot(uuid, uuid, boolean) to authenticated');
+    expect(migration.match(/if not public\.is_admin\(\)/g)?.length).toBeGreaterThanOrEqual(5);
+    expect(migration).toContain('if not public.is_active_member() then');
+    expect(migration.match(/for update;/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(migration).toContain('on conflict (vote_id, user_id) do update');
+    expect(migration).toContain('selected_vote.closes_at <= now()');
+    expect(migration).toContain('named_ballot.is_anonymous = false');
+    expect(publicProjection).toContain("jsonb_build_object('display_name', profile.display_name)");
+    expect(publicProjection).not.toContain("jsonb_build_object('user_id'");
+    expect(publicProjection).not.toContain('profile.email');
+    expect(migration).toContain('Votes with ballots cannot be edited');
+    expect(migration).toContain('Votes with ballots cannot be deleted');
+  });
+
   test('invite delivery is reserved, delivered, claimed, or failed explicitly', async () => {
     const baseline = await read('supabase/migrations/006_delivery_readiness.sql');
     const rolling = await read('supabase/migrations/023_rolling_member_invites.sql');

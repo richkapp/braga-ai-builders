@@ -43,9 +43,36 @@ describe('launch frontend contracts', () => {
     expect(nav).toContain('AuthStatus client:load');
     expect(nav).toContain('href="/ideas"');
     expect(nav).toContain('href="/events"');
+    expect(nav).toContain('href="/voting"');
     expect(nav).toContain('href="/members"');
     expect(nav.match(/>Posts<\/a>/g)).toHaveLength(2);
+    expect(nav.match(/>Voting<\/a>/g)).toHaveLength(2);
     expect(nav).not.toContain('>Ideas</a>');
+  });
+
+  test('community voting exposes public live results and organizer-only management', async () => {
+    const page = await read('src/pages/voting.astro');
+    const board = await read('src/components/voting/VotingBoard.tsx');
+    const adminPage = await read('src/pages/admin/voting.astro');
+    const adminDashboard = await read('src/components/admin/AdminDashboard.tsx');
+    const manager = await read('src/components/admin/VotingManager.tsx');
+    const client = await read('src/lib/voting.ts');
+    expect(page).toContain('VotingBoard client:load');
+    expect(board).toContain('Live results');
+    expect(board).toContain('Vote anonymously');
+    expect(board).toContain('When unchecked, your member name appears publicly');
+    expect(board).toContain('Sign in with your member account');
+    expect(board).toContain('Update my vote');
+    expect(board).toContain('const refresh = useCallback(() => load(false)');
+    expect(client).toContain("rpc('list_public_community_votes'");
+    expect(client).toContain("rpc('submit_community_ballot'");
+    expect(adminPage).toContain('mode="voting"');
+    expect(adminDashboard).toContain("mode === 'voting'");
+    expect(manager).toContain('Preview vote');
+    expect(manager).toContain('Save draft');
+    expect(manager).toContain('Publish vote');
+    expect(manager).toContain('Close early');
+    expect(manager).toContain('options.length < 10');
   });
 
   test('idea posting offers anonymous or account attribution without losing the draft', async () => {

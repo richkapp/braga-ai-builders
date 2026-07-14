@@ -15,7 +15,8 @@ export function toUserMessage(context: string, error: unknown): string {
 
   if (/duplicate|unique/i.test(message)) {
     if (context.includes('profile')) return 'That handle is already in use. Try another one.';
-    if (context.includes('vote')) return 'You already upvoted this idea.';
+    if (context.includes('voting')) return 'Each voting option must be different.';
+    if (context.includes('idea-vote')) return 'You already upvoted this idea.';
     if (context.includes('registration')) return 'You are already registered for this event.';
     if (context.includes('tag')) return 'That tag already exists. Choose it from the list instead.';
   }
@@ -39,6 +40,9 @@ export function toUserMessage(context: string, error: unknown): string {
     'event-detail': 'This event could not be loaded.',
     'event-registration': 'Your registration could not be saved. Please try again.',
     'event-cancellation': 'Your registration could not be cancelled. Please try again.',
+    'voting-list': 'Votes could not be loaded. Please refresh and try again.',
+    'voting-ballot': 'Your vote could not be saved. Please refresh and try again.',
+    'voting-admin': 'That voting action could not be completed. Check the fields and try again.',
     'member-directory': 'Members could not be loaded. Please refresh and try again.',
     'member-profile': 'This member profile could not be loaded.',
     'profile-load': 'Your profile could not be loaded. Please refresh and try again.',

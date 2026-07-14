@@ -91,3 +91,40 @@ export type Registration = {
   created_at: string;
   updated_at: string;
 };
+
+export type CommunityVoteStatus = 'draft' | 'published' | 'closed';
+
+export type CommunityVoteNamedVoter = {
+  display_name: string;
+};
+
+export type CommunityVoteOption = {
+  id: string;
+  label: string;
+  position: number;
+  ballot_count: number;
+  named_voters?: CommunityVoteNamedVoter[];
+};
+
+export type CommunityVote = {
+  id: string;
+  title: string;
+  description: string;
+  status: Exclude<CommunityVoteStatus, 'draft'>;
+  closes_at: string;
+  published_at: string | null;
+  closed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  ballot_count: number;
+  options: CommunityVoteOption[];
+  viewer_option_id: string | null;
+  viewer_is_anonymous: boolean | null;
+  viewer_can_vote: boolean;
+};
+
+export type AdminCommunityVote = Omit<CommunityVote, 'status' | 'viewer_option_id' | 'viewer_is_anonymous' | 'viewer_can_vote'> & {
+  status: CommunityVoteStatus;
+  can_edit: boolean;
+  can_delete: boolean;
+};
