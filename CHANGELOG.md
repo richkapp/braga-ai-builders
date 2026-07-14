@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Community voting:
+
+- Added a public Voting tab with live counts, percentages, turnout, publicly named ballots, and a closed-vote archive.
+- Let active signed-in members cast one choice, change it until closure, and opt into anonymous display without weakening one-member-one-ballot enforcement.
+- Added organizer-only draft, preview, publish, pre-ballot edit, early-close, and safe-delete controls for votes with 2–10 ordered options and required deadlines.
+- Kept voting tables private behind narrow RPCs that serialize edits, closure, and ballot changes while preventing anonymous voter identities from reaching application surfaces.
+
 Branding:
 
 - Replaced the illegible circular navigation badge with the supplied colorful brain-and-network artwork on a transparent background.

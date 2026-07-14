@@ -9,7 +9,7 @@ const schema = readdirSync('supabase/migrations')
   .join('\n');
 
 test('core community tables are defined', () => {
-  for (const table of ['profiles', 'invites', 'invite_redemptions', 'ideas', 'idea_votes', 'idea_bookmarks', 'post_tags', 'events', 'event_registrations', 'bug_reports']) {
+  for (const table of ['profiles', 'invites', 'invite_redemptions', 'ideas', 'idea_votes', 'idea_bookmarks', 'post_tags', 'events', 'event_registrations', 'bug_reports', 'community_votes', 'community_vote_options', 'community_vote_ballots']) {
     expect(schema).toContain(`create table public.${table}`);
   }
 });
@@ -19,7 +19,7 @@ test('one upvote per member per idea is enforced', () => {
 });
 
 test('RLS is enabled on user-owned tables', () => {
-  for (const table of ['profiles', 'ideas', 'idea_votes', 'idea_bookmarks', 'post_tags', 'events', 'event_registrations', 'bug_reports']) {
+  for (const table of ['profiles', 'ideas', 'idea_votes', 'idea_bookmarks', 'post_tags', 'events', 'event_registrations', 'bug_reports', 'community_votes', 'community_vote_options', 'community_vote_ballots']) {
     expect(schema).toContain(`alter table public.${table} enable row level security;`);
   }
 });
@@ -35,4 +35,9 @@ test('Data API grants are explicit because auto expose is disabled', () => {
 test('service-role-only tables are admin protected by policy', () => {
   expect(schema).toContain('Admins manage invites');
   expect(schema).toContain('Admins manage invite redemptions');
+});
+
+test('one current ballot per member per community vote is enforced', () => {
+  expect(schema).toContain('unique (vote_id, user_id)');
+  expect(schema).toContain('foreign key (vote_id, option_id)');
 });
