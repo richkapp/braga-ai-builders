@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Performance:
+
+- Pre-rendered fixed public and account-shell routes for Vercel CDN delivery while keeping parameterized data routes on demand in Paris beside the Supabase project.
+- Added Astro client navigation, intent-based link prefetching, and a persistent header/footer shell so route changes no longer reload the document and global islands.
+- Consolidated browser authentication and Voting visibility into one shared session store, skipped signed-out event-admin checks, and lazy-loaded the bug-report dialog only when opened.
+- Replaced the Posts author/count/bookmark/vote waterfall with one privacy-safe feed RPC and shared one tag-catalog request across feed, composer, and editor controls.
+
 Posts:
 
 - Renamed the public post route from `/ideas` to `/posts`, with permanent compatibility redirects for existing links and post detail URLs.

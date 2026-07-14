@@ -223,6 +223,7 @@ describe('delivery security contracts', () => {
 
   test('public post reads hide visitor identifiers and invite retries check capacity before delivery', async () => {
     const migration = await read('supabase/migrations/018_public_data_and_invite_capacity.sql');
+    const aggregatedFeed = await read('supabase/migrations/035_aggregated_post_feed.sql');
     const ideas = await read('src/lib/ideas.ts');
     const feed = await read('src/components/ideas/IdeaFeed.tsx');
     const detail = await read('src/components/ideas/IdeaDetail.tsx');
@@ -239,8 +240,27 @@ describe('delivery security contracts', () => {
     expect(ideas).toContain('PUBLIC_IDEA_COLUMNS');
     expect(ideas).not.toContain("PUBLIC_IDEA_COLUMNS = 'id, slug, title, body, month_key, status, author_id");
     expect(feed).not.toContain("from('ideas').select('*')");
-    expect(feed).toContain("rpc('list_visible_ideas')");
+    expect(ideas).toContain("rpc('list_post_feed'");
+    expect(feed).toContain('listPostFeed(initialView)');
+    expect(aggregatedFeed).toContain("security definer");
+    expect(aggregatedFeed).not.toContain("'author_id'");
+    expect(aggregatedFeed).not.toContain("'anonymous_visitor_id'");
     expect(detail).not.toContain(".select('*')");
+  });
+
+  test('the aggregated post feed is one privacy-safe, least-privilege request', async () => {
+    const migration = await read('supabase/migrations/035_aggregated_post_feed.sql');
+    expect(migration).toContain('create or replace function public.list_post_feed(p_view text');
+    expect(migration).toContain("p_view not in ('all', 'mine', 'bookmarks')");
+    expect(migration).toContain("idea.status <> 'hidden' or viewer_is_admin");
+    expect(migration).toContain('author.is_public = true');
+    expect(migration).toContain('author.suspended_at is null');
+    expect(migration).toContain("'viewer_has_bookmarked'");
+    expect(migration).toContain("'viewer_has_voted'");
+    expect(migration).toContain("'comment_count'");
+    expect(migration).toContain("'upvote_count'");
+    expect(migration).toContain('revoke all on function public.list_post_feed(text) from public');
+    expect(migration).toContain('grant execute on function public.list_post_feed(text) to anon, authenticated, service_role');
   });
 
   test('idea authors can edit content while only admins can change lifecycle state', async () => {

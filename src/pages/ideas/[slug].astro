@@ -1,3 +1,5 @@
 ---
+export const prerender = false;
+
 return Astro.redirect(`/posts/${encodeURIComponent(Astro.params.slug ?? '')}${Astro.url.search}`, 308);
 ---

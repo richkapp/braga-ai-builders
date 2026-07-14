@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { LuPlus, LuX } from 'react-icons/lu';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { createIdea, type IdeaPostingMode } from '@/lib/ideas';
-import type { RipCategory, RipTag } from '@/lib/types';
+import type { PostTagCatalogItem, RipCategory, RipTag } from '@/lib/types';
 import { toUserMessage } from '@/lib/errors';
 import { useAuthUser } from '@/components/auth/useAuthUser';
 import { isAnonymousUser } from '@/lib/anonymous';
@@ -18,7 +18,13 @@ import { communityConfig } from '@/config/community';
 type ComposerStage = 'form' | 'email' | 'sent';
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-export default function IdeaComposer() {
+type Props = {
+  tagCatalog: PostTagCatalogItem[];
+  tagCatalogLoading: boolean;
+  tagCatalogError: string;
+};
+
+export default function IdeaComposer({ tagCatalog, tagCatalogLoading, tagCatalogError }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const { user, loading: authLoading } = useAuthUser();
   const signedIn = Boolean(user && !isAnonymousUser(user));
@@ -184,7 +190,15 @@ export default function IdeaComposer() {
           {stage === 'form' && (
             <form onSubmit={submitPost} className="mt-6 space-y-5" aria-busy={status === 'saving'}>
               <p className="text-sm leading-6 text-braga-200">Share an idea, resource, or perspective with the community.</p>
-              <RipTaxonomyPicker category={category} tags={tags} onCategoryChange={setCategory} onTagsChange={setTags} />
+              <RipTaxonomyPicker
+            category={category}
+            tags={tags}
+            catalog={tagCatalog}
+            catalogLoading={tagCatalogLoading}
+            catalogError={tagCatalogError}
+            onCategoryChange={setCategory}
+            onTagsChange={setTags}
+          />
               <div><label className="label" htmlFor="idea-title">Title</label><input id="idea-title" className="input mt-2" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="What should the community know or do?" minLength={4} maxLength={120} required autoFocus /></div>
               <div><label className="label" htmlFor="idea-body">Details</label><textarea id="idea-body" className="input mt-2 min-h-40" value={body} onChange={(event) => setBody(event.target.value)} placeholder="Add the useful context, link, idea, or perspective." minLength={10} maxLength={2000} required /></div>
 

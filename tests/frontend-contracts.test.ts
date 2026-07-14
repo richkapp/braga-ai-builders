@@ -9,12 +9,16 @@ describe('launch frontend contracts', () => {
     const feed = await read('src/components/ideas/IdeaFeed.tsx');
     const detail = await read('src/components/ideas/IdeaDetail.tsx');
     const ideaLib = await read('src/lib/ideas.ts');
+    const feedMigration = await read('supabase/migrations/035_aggregated_post_feed.sql');
     const authorPreview = await read('src/components/ideas/PostAuthorPreview.tsx');
     const authorIdentity = await read('src/components/ideas/PostAuthorIdentity.tsx');
-    expect(feed).toContain('attachPublicAuthors');
+    expect(feed).toContain('listPostFeed(initialView)');
     expect(detail).toContain('attachPublicAuthors');
     expect(ideaLib).toContain(".from('idea_public_authors')");
     expect(ideaLib).toContain('linkedin_url');
+    expect(feedMigration).toContain("'profiles', case when author.id is null then null else jsonb_build_object(");
+    expect(feedMigration).not.toContain("'author_id'");
+    expect(feedMigration).not.toContain("'anonymous_visitor_id'");
     expect(feed).toContain('PostAuthorIdentity');
     expect(detail).toContain('PostAuthorPreview');
     expect(authorPreview).toContain('`/members/${profile.handle}`');
@@ -46,6 +50,7 @@ describe('launch frontend contracts', () => {
     const nav = await read('src/components/Nav.astro');
     const footer = await read('src/components/Footer.astro');
     const votingLink = await read('src/components/voting/VotingFeatureLink.tsx');
+    const siteSession = await read('src/components/auth/useSiteSession.ts');
     expect(nav).toContain('mobile-menu');
     expect(nav).toContain('AuthStatus client:load');
     expect(nav).toContain('href="/posts"');
@@ -55,9 +60,10 @@ describe('launch frontend contracts', () => {
     expect(nav.match(/<VotingFeatureLink/g)).toHaveLength(2);
     expect(nav).not.toContain('>Ideas</a>');
     expect(footer).toContain('<VotingFeatureLink className="hover:text-limewash" client:load />');
-    expect(votingLink).toContain('getVotingFeatureAccess');
-    expect(votingLink).toContain('shouldShowVotingLink(access)');
-    expect(votingLink).toContain('if (!visible) return null');
+    expect(siteSession).toContain('getVotingFeatureAccess');
+    expect(siteSession).toContain('shouldShowVotingLink(access)');
+    expect(votingLink).toContain('useSiteSession');
+    expect(votingLink).toContain('if (!votingVisible) return null');
     expect(votingLink).toContain('href="/voting"');
   });
 
@@ -77,7 +83,7 @@ describe('launch frontend contracts', () => {
     expect(legacyDetailPage).toContain("Astro.params.slug ?? ''");
     expect(legacyDetailPage).toContain('Astro.url.search');
     expect(legacyDetailPage).toContain('Astro.redirect(`/posts/${encodeURIComponent');
-    expect(feed).toContain('<IdeaComposer />');
+    expect(feed).toContain('<IdeaComposer tagCatalog={tagCatalog}');
     expect(feed).toContain('aria-label="Post controls"');
     expect(feed).toContain('aria-label="Filter posts"');
     expect(feed).toContain("const refresh = () => void load(false)");
@@ -220,7 +226,7 @@ describe('launch frontend contracts', () => {
     const commentLib = await read('src/lib/postComments.ts');
     expect(detail).toContain('<PostComments ideaId={idea.id} />');
     expect(feed).not.toContain('listIdeaComments(');
-    expect(feed).toContain('listIdeaCommentCounts(ids).catch(() => [])');
+    expect(feed).toContain('listPostFeed(initialView)');
     expect(feed).toContain('href={`/posts/${idea.slug}#comments`}');
     expect(detail).toContain("window.location.hash !== '#comments'");
     expect(detail).toContain("document.getElementById('comments')?.scrollIntoView");
@@ -344,7 +350,7 @@ describe('launch frontend contracts', () => {
     expect(footer).toContain('https://buymeacoffee.com/richkapp');
     expect(footer).toContain('☕️ buy the creator a coffee');
     expect(footer).toContain('opacity-50');
-    expect(footer).toContain('BugReportDialog client:load');
+    expect(footer).toContain('BugReportLauncher client:visible');
     expect(footer).not.toContain('Source code');
     await expect(access(new URL('src/pages/join.astro', root))).rejects.toThrow();
   });
@@ -438,6 +444,7 @@ describe('launch frontend contracts', () => {
     const detail = await read('src/components/ideas/IdeaDetail.tsx');
     const bookmark = await read('src/components/ideas/BookmarkButton.tsx');
     const ideas = await read('src/lib/ideas.ts');
+    const feedMigration = await read('supabase/migrations/035_aggregated_post_feed.sql');
 
     expect(settings).toContain('SettingsHub');
     expect(settings).toContain('<SettingsHub initialTab={initialTab} client:load />');
@@ -454,14 +461,14 @@ describe('launch frontend contracts', () => {
     expect(feed).toContain('useState<PostFeedView>(initialView)');
     expect(feed).toContain('My posts');
     expect(feed).toContain('My bookmarks');
-    expect(feed).toContain('viewer_is_author');
-    expect(feed).toContain('viewer_has_bookmarked');
-    expect(feed).toContain('viewer_bookmarked_at');
+    expect(feedMigration).toContain("'viewer_is_author'");
+    expect(feedMigration).toContain("'viewer_has_bookmarked'");
+    expect(feedMigration).toContain("'viewer_bookmarked_at'");
     expect(feed).toContain('BookmarkButton');
     expect(feed).toContain('updateOwnIdea');
     expect(feed).toContain('Member access unavailable');
     expect(feed).toContain("setCategoryFilter('all')");
-    expect(feed).toContain("request = request.in('id', ids)");
+    expect(feed).toContain('listPostFeed(initialView)');
     expect(detail).toContain('BookmarkButton');
     expect(detail).toContain('Bookmarking is unavailable because this account’s community membership is not active.');
     expect(bookmark).toContain('setIdeaBookmark');
@@ -569,7 +576,7 @@ describe('launch frontend contracts', () => {
     expect(footer).toContain('href="/terms"');
     expect(footer).toContain('href="/privacy"');
     expect(footer.indexOf('aria-label="Footer navigation"')).toBeLessThan(footer.indexOf('aria-label="Legal and support"'));
-    expect(footer.indexOf('href="/privacy"')).toBeLessThan(footer.indexOf('<BugReportDialog'));
+    expect(footer.indexOf('href="/privacy"')).toBeLessThan(footer.indexOf('<BugReportLauncher'));
     expect(authForm).toContain('href="/terms"');
     expect(authForm).toContain('href="/privacy"');
     expect(bugReport).toContain('href="/privacy"');
