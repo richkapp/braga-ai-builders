@@ -129,7 +129,8 @@ describe('launch frontend contracts', () => {
     expect(preview).toContain("record['@type'] === 'Event'");
   });
 
-  test('header logo and adaptive brain favicons exist', async () => {
+  test('supplied header logo and adaptive brain favicons exist', async () => {
+    await access(new URL('public/images/braga-brain-network.webp', root));
     await access(new URL('public/favicon.svg', root));
     await access(new URL('public/favicon-light.svg', root));
     await access(new URL('public/favicon-dark.svg', root));
@@ -139,7 +140,9 @@ describe('launch frontend contracts', () => {
     const favicon = await read('public/favicon.svg');
     expect(layout).toContain('media="(prefers-color-scheme: light)"');
     expect(layout).toContain('media="(prefers-color-scheme: dark)"');
-    expect(nav).toContain('/favicon-dark.svg');
+    expect(nav).toContain('/images/braga-brain-network.webp');
+    expect(nav).toContain('width="64"');
+    expect(nav).toContain('height="64"');
     expect(nav).not.toContain('/images/braga-ai-builders-logo.webp');
     expect(nav).not.toContain('bg-limewash font-extrabold');
     expect(favicon).not.toContain('<text');
