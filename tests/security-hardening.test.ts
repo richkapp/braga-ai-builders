@@ -263,6 +263,14 @@ describe('delivery security contracts', () => {
     expect(migration).toContain('grant execute on function public.list_post_feed(text) to anon, authenticated, service_role');
   });
 
+  test('the aggregated post feed preserves member and anonymous upvote totals', async () => {
+    const correction = await read('supabase/migrations/036_aggregated_post_feed_vote_counts.sql');
+    expect(correction).toContain('create or replace function public.list_post_feed(p_view text');
+    expect(correction).toContain('public.idea_vote_counts as vote_count');
+    expect(correction).toContain("'upvote_count'");
+    expect(correction).toContain('grant execute on function public.list_post_feed(text) to anon, authenticated, service_role');
+  });
+
   test('idea authors can edit content while only admins can change lifecycle state', async () => {
     const migration = await read('supabase/migrations/014_idea_edit_permissions.sql');
     expect(migration).toContain('grant update (title, body, status)');

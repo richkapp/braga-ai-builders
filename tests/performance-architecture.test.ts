@@ -75,4 +75,22 @@ describe('performance architecture contracts', () => {
     expect(launcher).toContain("lazy(() => import('./BugReportDialog'))");
     expect(launcher).toContain('if (!loaded)');
   });
+
+  test('ClientRouter history and persisted overlays survive navigation safely', async () => {
+    const settings = await read('src/components/settings/SettingsHub.tsx');
+    const composer = await read('src/components/ideas/IdeaComposer.tsx');
+    const callback = await read('src/components/auth/AuthCallback.tsx');
+    const nav = await read('src/components/Nav.astro');
+    const launcher = await read('src/components/bug-reports/BugReportLauncher.tsx');
+    expect(settings).toContain("import { navigate } from 'astro:transitions/client'");
+    expect(settings).toContain('sync();');
+    expect(settings).toContain("navigate(url.href, { history: 'push' })");
+    expect(settings).not.toContain('history.pushState({}');
+    expect(composer).toContain('history.replaceState(window.history.state');
+    expect(callback).not.toContain('history.replaceState({}');
+    expect(nav).toContain("document.addEventListener('astro:before-preparation'");
+    expect(nav).toContain("menu.removeAttribute('open')");
+    expect(launcher).toContain("document.addEventListener('astro:before-preparation'");
+    expect(launcher).toContain('setLoaded(false)');
+  });
 });

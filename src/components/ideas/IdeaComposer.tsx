@@ -54,7 +54,7 @@ export default function IdeaComposer({ tagCatalog, tagCatalogLoading, tagCatalog
     }
     if (new URL(window.location.href).searchParams.get('restoreIdea') === '1') {
       setMessage('Your post is restored and ready to share.');
-      window.history.replaceState({}, document.title, '/posts');
+      window.history.replaceState(window.history.state, document.title, '/posts');
       dialogRef.current?.showModal();
     }
   }, []);

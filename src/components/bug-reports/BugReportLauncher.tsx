@@ -1,9 +1,15 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 const BugReportDialog = lazy(() => import('./BugReportDialog'));
 
 export default function BugReportLauncher() {
   const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const closeForNavigation = () => setLoaded(false);
+    document.addEventListener('astro:before-preparation', closeForNavigation);
+    return () => document.removeEventListener('astro:before-preparation', closeForNavigation);
+  }, []);
 
   if (!loaded) {
     return (

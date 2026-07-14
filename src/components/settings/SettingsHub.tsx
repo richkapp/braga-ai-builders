@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { navigate } from 'astro:transitions/client';
 import { LuBookmark, LuLink, LuMessagesSquare, LuUserRound } from 'react-icons/lu';
 import ProfileForm from '@/components/profile/ProfileForm';
 import MemberInvitePool from '@/components/invites/MemberInvitePool';
@@ -28,6 +29,7 @@ export default function SettingsHub({ initialTab = 'profile' }: { initialTab?: S
 
   useEffect(() => {
     const sync = () => setActiveTab(readTab(window.location.search));
+    sync();
     window.addEventListener('popstate', sync);
     return () => window.removeEventListener('popstate', sync);
   }, []);
@@ -37,7 +39,7 @@ export default function SettingsHub({ initialTab = 'profile' }: { initialTab?: S
     setActiveTab(tab);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', tab);
-    window.history.pushState({}, '', url);
+    void navigate(url.href, { history: 'push' });
   }
 
   return (
