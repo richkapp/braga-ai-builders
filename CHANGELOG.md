@@ -14,6 +14,7 @@ Posts:
 - Moved **Post anonymously** into the initial post form, defaulted it off for signed-in members, and locked it on with account guidance for signed-out visitors.
 - Added super-admin database-backed switches for anonymous posts, signed-out posts, anonymous comments, and anonymous replies.
 - Preserved replies when an author or parent comment is removed, made feed comment counts fail soft, and restored reliable `#comments` navigation after async detail loading.
+- Hardened participation after review: attribution now stays correct through auth transitions, `#comments` scrolls only once, deep mobile threads retain readable width, cancelled composers restore keyboard focus, suspended super admins cannot race a setting change, and deleted members remain distinct from anonymous posters.
 - Renamed the signed-in Settings navigation label and page heading to Dashboard.
 - Kept post creation available through feed refreshes and read failures, and prevented magic-link requests from racing backward navigation in the composer.
 

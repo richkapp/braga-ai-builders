@@ -20,14 +20,14 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function IdeaComposer() {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const previousSignedIn = useRef<boolean | null>(null);
   const { user, loading: authLoading } = useAuthUser();
   const signedIn = Boolean(user && !isAnonymousUser(user));
+  const accountUserId = signedIn ? user!.id : null;
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [category, setCategory] = useState<RipCategory>('idea');
   const [tags, setTags] = useState<RipTag[]>([]);
-  const [postAnonymously, setPostAnonymously] = useState(true);
+  const [anonymousChoice, setAnonymousChoice] = useState<{ accountUserId: string; selected: boolean } | null>(null);
   const [settings, setSettings] = useState<PostParticipationSettings>(lockedPostParticipationSettings);
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [settingsError, setSettingsError] = useState('');
@@ -53,11 +53,6 @@ export default function IdeaComposer() {
     }
   }, []);
 
-  useEffect(() => {
-    if (authLoading || previousSignedIn.current === signedIn) return;
-    previousSignedIn.current = signedIn;
-    setPostAnonymously(!signedIn);
-  }, [authLoading, signedIn]);
 
   useEffect(() => {
     let current = true;
@@ -79,7 +74,7 @@ export default function IdeaComposer() {
 
   function open() {
     setStage('form');
-    setPostAnonymously(!signedIn);
+    setAnonymousChoice(null);
     if (status !== 'saved') setMessage('');
     setStatus('idle');
     dialogRef.current?.showModal();
@@ -101,7 +96,7 @@ export default function IdeaComposer() {
     try {
       await createIdea({ title, body, category, tags, mode });
       clearIdeaDraft();
-      setTitle(''); setBody(''); setCategory('idea'); setTags([]); setPostAnonymously(!signedIn);
+      setTitle(''); setBody(''); setCategory('idea'); setTags([]); setAnonymousChoice(null);
       setStatus('saved');
       setMessage(mode === 'anonymous' ? 'Post shared anonymously.' : 'Post shared with your profile.');
       close();
@@ -118,7 +113,7 @@ export default function IdeaComposer() {
     setMessage('');
     try {
       validateDraft();
-      await post(postAnonymously ? 'anonymous' : 'account');
+      await post(effectivePostAnonymously ? 'anonymous' : 'account');
     } catch (error) {
       setStatus('error');
       setMessage(toUserMessage('idea-create', error));
@@ -150,8 +145,11 @@ export default function IdeaComposer() {
 
   const anonymousPostsAllowed = settings.allow_anonymous_posts;
   const signedOutPostsAllowed = settings.allow_signed_out_posts;
+  const effectivePostAnonymously = accountUserId
+    ? anonymousChoice?.accountUserId === accountUserId && anonymousChoice.selected
+    : true;
   const postingAllowed = signedIn
-    ? !postAnonymously || anonymousPostsAllowed
+    ? !effectivePostAnonymously || anonymousPostsAllowed
     : anonymousPostsAllowed && signedOutPostsAllowed;
   const participationReady = !authLoading && !settingsLoading;
 
@@ -195,8 +193,8 @@ export default function IdeaComposer() {
                   <input
                     type="checkbox"
                     className="h-4 w-4 shrink-0 accent-limewash"
-                    checked={signedIn ? postAnonymously : true}
-                    onChange={(event) => { if (signedIn) setPostAnonymously(event.target.checked); }}
+                    checked={effectivePostAnonymously}
+                    onChange={(event) => { if (accountUserId) setAnonymousChoice({ accountUserId, selected: event.target.checked }); }}
                     disabled={!signedIn || !anonymousPostsAllowed || settingsLoading}
                   />
                   Post anonymously
@@ -211,7 +209,7 @@ export default function IdeaComposer() {
               </div>
 
               <button type="submit" className="btn-primary w-full" disabled={status === 'saving' || !participationReady || !postingAllowed}>
-                {status === 'saving' ? 'Posting…' : postAnonymously ? 'Post anonymously' : 'Post with my profile'}
+                {status === 'saving' ? 'Posting…' : effectivePostAnonymously ? 'Post anonymously' : 'Post with my profile'}
               </button>
               {!signedIn && participationReady && !postingAllowed && <button type="button" className="btn-secondary w-full" onClick={startSignInFlow}>Already a member? Sign in</button>}
               {status === 'error' && message && <p className="error-message" role="alert">{message}</p>}
