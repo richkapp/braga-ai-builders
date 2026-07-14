@@ -8,6 +8,7 @@ Posts:
 - Moved post creation into an accessible modal launched from the left sidebar, and moved post library, category, and tag filters into that sidebar.
 - Reworked feed cards around the poster's avatar, name, and publication date, with clearly distinct member and anonymous fallback artwork.
 - Renamed the signed-in Settings navigation label and page heading to Dashboard.
+- Kept post creation available through feed refreshes and read failures, and prevented magic-link requests from racing backward navigation in the composer.
 
 Community voting:
 

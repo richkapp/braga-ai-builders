@@ -11,6 +11,7 @@ const required = [
   'supabase/functions/request-invite-magic-link/index.ts',
   'src/pages/join/[code].astro',
   'src/pages/posts.astro',
+  'src/pages/posts/[slug].astro',
   'src/pages/events.astro',
   'src/pages/admin/index.astro'
 ];

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { toUserMessage } from '@/lib/errors';
 import type { CommunityVote, CommunityVoteOption } from '@/lib/types';
-import { calculateVotePercentage, listCommunityVotes, submitCommunityBallot } from '@/lib/voting';
+import { calculateVotePercentage, canManageCommunityVotes, listCommunityVotes, submitCommunityBallot } from '@/lib/voting';
 import { getCurrentMemberRole } from '@/lib/admin';
 import { isAnonymousUser } from '@/lib/anonymous';
 import { useAuthUser } from '@/components/auth/useAuthUser';
@@ -172,7 +172,7 @@ export default function VotingBoard({ operations = defaultOperations }: { operat
       return () => { active = false; };
     }
     getCurrentMemberRole()
-      .then((role) => { if (active) setIsAdmin(role === 'admin' || role === 'super_admin'); })
+      .then((role) => { if (active) setIsAdmin(canManageCommunityVotes(user, role)); })
       .catch(() => { if (active) setIsAdmin(false); });
     return () => { active = false; };
   }, [authLoading, user]);

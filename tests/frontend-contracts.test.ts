@@ -58,15 +58,23 @@ describe('launch frontend contracts', () => {
   test('posts use the canonical route, sidebar controls, modal composer, and author-first cards', async () => {
     const page = await read('src/pages/posts.astro');
     const legacyPage = await read('src/pages/ideas.astro');
+    const detailPage = await read('src/pages/posts/[slug].astro');
+    const legacyDetailPage = await read('src/pages/ideas/[slug].astro');
     const feed = await read('src/components/ideas/IdeaFeed.tsx');
     const composer = await read('src/components/ideas/IdeaComposer.tsx');
     const authStatus = await read('src/components/auth/AuthStatus.tsx');
     const settings = await read('src/pages/settings.astro');
     expect(page).toContain('IdeaFeed layout="sidebar"');
     expect(legacyPage).toContain("Astro.redirect(`/posts${Astro.url.search}`");
+    expect(detailPage).toContain("publicRecordExists('ideas', 'slug', slug)");
+    expect(legacyDetailPage).toContain("Astro.params.slug ?? ''");
+    expect(legacyDetailPage).toContain('Astro.url.search');
+    expect(legacyDetailPage).toContain('Astro.redirect(`/posts/${encodeURIComponent');
     expect(feed).toContain('<IdeaComposer />');
     expect(feed).toContain('aria-label="Post controls"');
     expect(feed).toContain('aria-label="Filter posts"');
+    expect(feed).toContain("const refresh = () => void load(false)");
+    expect(feed).toContain("layout === 'sidebar' && (loading || error)");
     expect(feed).toContain('PostAuthorIdentity');
     expect(feed.indexOf('PostAuthorIdentity profile={idea.profiles}')).toBeLessThan(feed.indexOf('href={`/posts/${idea.slug}`}'));
     expect(feed).not.toContain('Your posts are tied to your member profile.');
@@ -91,6 +99,7 @@ describe('launch frontend contracts', () => {
     expect(board).toContain('Update my vote');
     expect(board).toContain('Create a new poll');
     expect(board).toContain('getCurrentMemberRole');
+    expect(board).toContain('{isAdmin && <a className="btn-primary" href="/admin/voting">Create a new poll</a>}');
     expect(board).toContain('const refresh = useCallback(() => load(false)');
     expect(client).toContain("rpc('list_public_community_votes'");
     expect(client).toContain("rpc('submit_community_ballot'");
@@ -285,6 +294,7 @@ describe('launch frontend contracts', () => {
     expect(composer).toContain('I agree to receive a one-time magic-link email sent through Supabase.');
     expect(composer).toContain('My email address will never be used for marketing.');
     expect(composer).toContain('emailBusy || !emailConsent');
+    expect(composer).toContain("onClick={() => setStage('choice')} disabled={emailBusy}");
     expect(edge).toContain("payload.context === 'signin'");
     expect(edge).toContain('create_user: false');
     expect(edge).toContain('If that email belongs to a member, a sign-in link is on its way.');
