@@ -22,17 +22,18 @@ export default function PostAuthorIdentity({ profile, createdAt }: { profile: Pu
   }, [source]);
 
   const image = source && source !== failedSource
-    ? <img src={source} alt="" className="h-12 w-12 rounded-2xl object-cover" loading="lazy" onError={() => setFailedSource(source)} />
+    ? <img src={source} alt="" className="h-8 w-8 rounded-full object-cover" loading="lazy" onError={() => setFailedSource(source)} />
     : profile
-      ? <span className="grid h-12 w-12 place-items-center rounded-2xl border border-limewash/35 bg-limewash/10 text-limewash" aria-hidden="true"><LuUserRound className="h-6 w-6" /></span>
-      : <span className="grid h-12 w-12 place-items-center rounded-2xl border border-dashed border-violet-300/50 bg-violet-500/15 text-violet-200" aria-hidden="true"><LuGhost className="h-6 w-6" /></span>;
+      ? <span className="grid h-8 w-8 place-items-center rounded-full border border-limewash/35 bg-limewash/10 text-limewash" aria-hidden="true"><LuUserRound className="h-4 w-4" /></span>
+      : <span className="grid h-8 w-8 place-items-center rounded-full border border-dashed border-violet-300/50 bg-violet-500/15 text-violet-200" aria-hidden="true"><LuGhost className="h-4 w-4" /></span>;
 
   return (
-    <div className="flex min-w-0 items-center gap-3">
+    <div className="flex min-w-0 items-center gap-2">
       <span className="shrink-0">{image}</span>
-      <div className="min-w-0">
-        <div className="truncate text-sm"><PostAuthorPreview profile={profile} variant="header" /></div>
-        <time dateTime={createdAt} className="mt-0.5 block text-xs text-braga-300">{formatPostDate(createdAt)}</time>
+      <div className="flex min-w-0 items-center gap-2 text-xs">
+        <div className="min-w-0 truncate"><PostAuthorPreview profile={profile} variant="header" /></div>
+        <span className="shrink-0 text-white/30" aria-hidden="true">•</span>
+        <time dateTime={createdAt} className="shrink-0 text-braga-300">{formatPostDate(createdAt)}</time>
       </div>
     </div>
   );

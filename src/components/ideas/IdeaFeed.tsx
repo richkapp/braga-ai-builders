@@ -323,7 +323,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
             {isAdmin && <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-red-300/30 text-red-200 hover:bg-red-300/10" onClick={() => void remove(idea)} aria-label={`Delete ${idea.title}`} title="Delete post"><LuTrash2 className="h-4 w-4" aria-hidden="true" /></button>}
           </div>
         </header>
-        <div className="mt-5">
+        <div className="mt-3">
           <div className="flex flex-wrap items-center gap-2"><a href={`/posts/${idea.slug}`} className="text-xl font-bold text-white hover:text-limewash">{idea.title}</a>{idea.status === 'closed' && <span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">Done</span>}</div>
           <div className="mt-3"><TaxonomyBadges idea={idea} tagLabels={tagLabels} activeCategory={categoryFilter} selectedTags={selectedTags} onCategory={showFilters ? setCategoryFilter : undefined} onTag={showFilters ? toggleTagFilter : undefined} /></div>
           <p className="line-clamp-4 text-sm leading-6 text-braga-100">{idea.body}</p>
