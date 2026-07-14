@@ -48,6 +48,7 @@ export default function InviteEmailForm({ code, mode }: Props) {
         <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-limewash" checked={emailConsent} onChange={(event) => setEmailConsent(event.target.checked)} required disabled={status === 'loading' || status === 'success'} />
         <span>I agree to receive a one-time magic-link email sent through Supabase. My email address will never be used for marketing.</span>
       </label>
+      <p className="text-xs leading-5 text-braga-300">Use of this site is subject to our <a className="font-semibold text-limewash hover:underline" href="/terms">Terms and Conditions</a>. See the <a className="font-semibold text-limewash hover:underline" href="/privacy">Privacy Policy</a> for how account data is handled.</p>
       <button className="btn-primary w-full" disabled={!emailConsent || status === 'loading' || status === 'success'}>
         {status === 'loading' ? 'Sending link…' : status === 'success' ? 'Link sent' : 'Email me a magic link'}
       </button>

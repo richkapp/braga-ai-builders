@@ -226,6 +226,7 @@ export default function IdeaComposer() {
                 <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-limewash" checked={emailConsent} onChange={(event) => setEmailConsent(event.target.checked)} required disabled={emailBusy} />
                 <span>I agree to receive a one-time magic-link email sent through Supabase. My email address will never be used for marketing.</span>
               </label>
+              <p className="mt-3 text-xs leading-5 text-braga-300">Use of this site is subject to our <a className="font-semibold text-limewash hover:underline" href="/terms">Terms and Conditions</a>. See the <a className="font-semibold text-limewash hover:underline" href="/privacy">Privacy Policy</a> for how account data is handled.</p>
               <div className="mt-6 grid gap-3"><button className="btn-primary" disabled={emailBusy || !emailConsent}>{emailBusy ? 'Sending…' : 'Email me the magic link'}</button><button type="button" className="px-4 py-2 text-sm text-braga-200 hover:text-white disabled:cursor-not-allowed disabled:opacity-50" onClick={() => setStage('form')} disabled={emailBusy}>Back</button></div>
               {message && <p className="error-message mt-4" role="alert">{message}</p>}
             </form>

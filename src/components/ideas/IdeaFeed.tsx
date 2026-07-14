@@ -17,6 +17,7 @@ import IdeaComposer from './IdeaComposer';
 import PostAuthorIdentity from './PostAuthorIdentity';
 import PostMemberFilters from './PostMemberFilters';
 import RipTaxonomyPicker from './RipTaxonomyPicker';
+import SharePostButton from './SharePostButton';
 
 import { usePostTagCatalog } from './usePostTagCatalog';
 
@@ -302,7 +303,6 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     <section className="card space-y-6 p-5" aria-label="Filter posts">
       <div>
         <h2 className="text-lg font-black text-white">Filters</h2>
-        <p className="mt-1 text-xs leading-5 text-braga-300">Narrow the feed without losing your place.</p>
       </div>
       {showViewTabs && libraryAccess === 'active' && <nav className="grid gap-2" aria-label="Post library views">
         {(Object.keys(viewLabels) as PostFeedView[]).map((item) => <button key={item} type="button" className={`${filterPill} text-left ${view === item ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={view === item} onClick={() => chooseView(item)}>{viewLabels[item]}</button>)}
@@ -364,6 +364,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
               <LuMessageCircle className="h-4 w-4" aria-hidden="true" />
               {idea.comment_count ?? 0}
             </a>
+            <SharePostButton slug={idea.slug} title={idea.title} />
           </div>
         </footer>
       </article>;
