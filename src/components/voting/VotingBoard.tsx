@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { toUserMessage } from '@/lib/errors';
-import type { CommunityVote, CommunityVoteOption } from '@/lib/types';
-import { calculateVotePercentage, canManageCommunityVotes, listCommunityVotes, submitCommunityBallot } from '@/lib/voting';
-import { getCurrentMemberRole } from '@/lib/admin';
-import { isAnonymousUser } from '@/lib/anonymous';
-import { useAuthUser } from '@/components/auth/useAuthUser';
+import type { CommunityVote, CommunityVoteOption, VotingFeatureAccess } from '@/lib/types';
+import { calculateVotePercentage, canViewCommunityVoting, getVotingFeatureAccess, listCommunityVotes, submitCommunityBallot } from '@/lib/voting';
+import { communityConfig } from '@/config/community';
 
 export type VotingBoardOperations = {
+  access: typeof getVotingFeatureAccess;
   list: typeof listCommunityVotes;
   submit: typeof submitCommunityBallot;
 };
 
 const defaultOperations: VotingBoardOperations = {
+  access: getVotingFeatureAccess,
   list: listCommunityVotes,
   submit: submitCommunityBallot
 };
@@ -50,7 +50,13 @@ function OptionResults({ option, total }: { option: CommunityVoteOption; total: 
   );
 }
 
-function VoteCard({ vote, onSaved, submitBallot }: { vote: CommunityVote; onSaved: () => Promise<void>; submitBallot: typeof submitCommunityBallot }) {
+function VoteAccessMessage({ isClosed, votingEnabled }: { isClosed: boolean; votingEnabled: boolean }) {
+  if (isClosed) return <p className="text-sm text-braga-200">Voting has closed. These are the final results.</p>;
+  if (!votingEnabled) return <p className="text-sm text-braga-200">Voting is currently off. Organizers can still review these results.</p>;
+  return <p className="text-sm text-braga-100"><a className="font-bold text-limewash hover:underline" href="/signin">Sign in with your member account</a> to cast a vote.</p>;
+}
+
+function VoteCard({ vote, votingEnabled, onSaved, submitBallot }: { vote: CommunityVote; votingEnabled: boolean; onSaved: () => Promise<void>; submitBallot: typeof submitCommunityBallot }) {
   const [selectedOption, setSelectedOption] = useState(vote.viewer_option_id ?? '');
   const [anonymous, setAnonymous] = useState(vote.viewer_is_anonymous ?? false);
   const [busy, setBusy] = useState(false);
@@ -127,9 +133,7 @@ function VoteCard({ vote, onSaved, submitBallot }: { vote: CommunityVote; onSave
         </form>
       ) : (
         <div className="border-t border-white/10 pt-5">
-          {isClosed
-            ? <p className="text-sm text-braga-200">Voting has closed. These are the final results.</p>
-            : <p className="text-sm text-braga-100"><a className="font-bold text-limewash hover:underline" href="/signin">Sign in with your member account</a> to cast a vote.</p>}
+          <VoteAccessMessage isClosed={isClosed} votingEnabled={votingEnabled} />
         </div>
       )}
     </article>
@@ -137,9 +141,8 @@ function VoteCard({ vote, onSaved, submitBallot }: { vote: CommunityVote; onSave
 }
 
 export default function VotingBoard({ operations = defaultOperations }: { operations?: VotingBoardOperations }) {
-  const { user, loading: authLoading } = useAuthUser();
   const [votes, setVotes] = useState<CommunityVote[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [featureAccess, setFeatureAccess] = useState<VotingFeatureAccess | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const loadSequence = useRef(0);
@@ -150,7 +153,12 @@ export default function VotingBoard({ operations = defaultOperations }: { operat
     setError('');
     try {
       const rows = await operations.list();
-      if (sequence === loadSequence.current) setVotes(rows);
+      // Read access last so a concurrent disable cannot commit stale enabled state with empty results.
+      const access = await operations.access();
+      if (sequence === loadSequence.current) {
+        setFeatureAccess(access);
+        setVotes(canViewCommunityVoting(access) ? rows : []);
+      }
     } catch (caught) {
       if (sequence === loadSequence.current) setError(toUserMessage('voting-list', caught));
     } finally {
@@ -165,33 +173,47 @@ export default function VotingBoard({ operations = defaultOperations }: { operat
     return () => { loadSequence.current += 1; };
   }, [load]);
 
-  useEffect(() => {
-    let active = true;
-    if (authLoading || !user || isAnonymousUser(user)) {
-      setIsAdmin(false);
-      return () => { active = false; };
-    }
-    getCurrentMemberRole()
-      .then((role) => { if (active) setIsAdmin(canManageCommunityVotes(user, role)); })
-      .catch(() => { if (active) setIsAdmin(false); });
-    return () => { active = false; };
-  }, [authLoading, user]);
+  const canViewVoting = canViewCommunityVoting(featureAccess);
+  const isAdmin = Boolean(featureAccess?.viewer_is_admin);
 
-  if (loading) return <p className="card p-6 text-braga-100" role="status">Loading community votes…</p>;
-  if (error) return <p className="error-message" role="alert">{error}</p>;
+  useEffect(() => {
+    if (!featureAccess) return;
+    document.title = `${canViewVoting ? 'Voting' : 'Page not found'} · ${communityConfig.name}`;
+  }, [canViewVoting, featureAccess]);
+
+  if (loading) return <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8"><p className="card p-6 text-braga-100" role="status">Checking page access…</p></section>;
+  if (error) return <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8"><p className="error-message" role="alert">{error}</p></section>;
+  if (!featureAccess || !canViewVoting) return (
+    <section className="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 lg:px-8">
+      <div className="card p-8 sm:p-12">
+        <h1 className="text-3xl font-black text-white">Page not found</h1>
+        <p className="mt-4 text-braga-100">The page you requested is not available.</p>
+        <a className="btn-primary mt-7" href="/">Back home</a>
+      </div>
+    </section>
+  );
 
   const openVotes = votes.filter((vote) => vote.status === 'published');
   const closedVotes = votes.filter((vote) => vote.status === 'closed');
 
   return (
-    <div className="space-y-10">
+    <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+      <p className="text-xs font-black uppercase tracking-[0.2em] text-limewash">Community decisions</p>
+      <h1 className="mt-3 text-4xl font-black text-white">Voting</h1>
+      <p className="mt-4 max-w-3xl text-braga-100">See what the {communityConfig.name} community is deciding, follow live results, and sign in to cast your vote.</p>
+      {!featureAccess.is_enabled && isAdmin && (
+        <aside className="mt-6 rounded-2xl border border-amber-300/35 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
+          Voting is off. Only organizers can view this page until you turn public visibility back on.
+        </aside>
+      )}
+      <div className="mt-8 space-y-10">
       <section aria-labelledby="open-votes-title">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div><h2 id="open-votes-title" className="text-2xl font-black text-white">Open votes</h2><p className="mt-2 text-sm text-braga-200">Results are live. Signed-in members can change their choice until each deadline.</p></div>
           {isAdmin && <a className="btn-primary" href="/admin/voting">Create a new poll</a>}
         </div>
         <div className="space-y-5">
-          {openVotes.map((vote) => <VoteCard key={vote.id} vote={vote} onSaved={refresh} submitBallot={operations.submit} />)}
+          {openVotes.map((vote) => <VoteCard key={vote.id} vote={vote} votingEnabled={featureAccess.is_enabled} onSaved={refresh} submitBallot={operations.submit} />)}
           {openVotes.length === 0 && <p className="card p-6 text-braga-100">No votes are open right now.</p>}
         </div>
       </section>
@@ -199,9 +221,10 @@ export default function VotingBoard({ operations = defaultOperations }: { operat
       {closedVotes.length > 0 && (
         <section aria-labelledby="closed-votes-title">
           <div className="mb-5"><h2 id="closed-votes-title" className="text-2xl font-black text-white">Closed votes</h2><p className="mt-2 text-sm text-braga-200">The community's completed decisions and final results.</p></div>
-          <div className="space-y-5">{closedVotes.map((vote) => <VoteCard key={vote.id} vote={vote} onSaved={refresh} submitBallot={operations.submit} />)}</div>
+          <div className="space-y-5">{closedVotes.map((vote) => <VoteCard key={vote.id} vote={vote} votingEnabled={featureAccess.is_enabled} onSaved={refresh} submitBallot={operations.submit} />)}</div>
         </section>
       )}
-    </div>
+      </div>
+    </section>
   );
 }

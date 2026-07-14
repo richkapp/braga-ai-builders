@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { calculateVotePercentage, canManageCommunityVotes, normalizeCommunityVoteInput } from '@/lib/voting';
+import { calculateVotePercentage, canManageCommunityVotes, canViewCommunityVoting, normalizeCommunityVoteInput, shouldShowVotingLink } from '@/lib/voting';
 
 const validInput = {
   title: 'Choose the next build night topic',
@@ -60,5 +60,20 @@ describe('community vote management authorization', () => {
     expect(canManageCommunityVotes({}, 'member')).toBe(false);
     expect(canManageCommunityVotes({}, 'admin')).toBe(true);
     expect(canManageCommunityVotes({}, 'super_admin')).toBe(true);
+  });
+});
+
+describe('community vote visibility decisions', () => {
+  test('keeps the page private while preserving direct admin access', () => {
+    expect(canViewCommunityVoting(null)).toBe(false);
+    expect(canViewCommunityVoting({ is_enabled: false, viewer_is_admin: false })).toBe(false);
+    expect(canViewCommunityVoting({ is_enabled: false, viewer_is_admin: true })).toBe(true);
+    expect(canViewCommunityVoting({ is_enabled: true, viewer_is_admin: false })).toBe(true);
+  });
+
+  test('hides navigation links for everyone whenever public voting is off', () => {
+    expect(shouldShowVotingLink({ is_enabled: false, viewer_is_admin: false })).toBe(false);
+    expect(shouldShowVotingLink({ is_enabled: false, viewer_is_admin: true })).toBe(false);
+    expect(shouldShowVotingLink({ is_enabled: true, viewer_is_admin: false })).toBe(true);
   });
 });

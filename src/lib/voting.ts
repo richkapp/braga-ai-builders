@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { AdminCommunityVote, CommunityVote } from './types';
+import type { AdminCommunityVote, CommunityVote, VotingFeatureAccess } from './types';
 
 export type CommunityVoteInput = {
   title: string;
@@ -55,6 +55,34 @@ export function calculateVotePercentage(ballotCount: number, totalBallots: numbe
 
 export function canManageCommunityVotes(user: { is_anonymous?: boolean } | null | undefined, role: 'member' | 'admin' | 'super_admin' | null) {
   return Boolean(user && !user.is_anonymous && (role === 'admin' || role === 'super_admin'));
+}
+
+export function canViewCommunityVoting(access: VotingFeatureAccess | null | undefined) {
+  return Boolean(access?.is_enabled || access?.viewer_is_admin);
+}
+
+export function shouldShowVotingLink(access: VotingFeatureAccess | null | undefined) {
+  return Boolean(access?.is_enabled);
+}
+
+export async function getVotingFeatureAccess() {
+  const { data, error } = await supabase.rpc('get_voting_feature_access');
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as VotingFeatureAccess | null;
+  return {
+    is_enabled: Boolean(row?.is_enabled),
+    viewer_is_admin: Boolean(row?.viewer_is_admin)
+  } satisfies VotingFeatureAccess;
+}
+
+export async function setVotingFeatureEnabled(enabled: boolean) {
+  const { data, error } = await supabase.rpc('admin_set_voting_feature_enabled', { p_enabled: enabled });
+  if (error) throw error;
+  const isEnabled = Boolean(data);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('braga:voting-visibility-changed', { detail: { is_enabled: isEnabled } }));
+  }
+  return isEnabled;
 }
 
 export async function listCommunityVotes() {

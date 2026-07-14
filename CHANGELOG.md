@@ -14,6 +14,7 @@ Posts:
 
 Community voting:
 
+- Added an organizer-controlled on/off switch that hides Voting from public navigation, blocks public results and ballots at the database boundary, and restricts the page to organizers while disabled.
 - Added an organizer-only **Create a new poll** action to the public Voting page.
 
 - Added a public Voting tab with live counts, percentages, turnout, publicly named ballots, and a closed-vote archive.

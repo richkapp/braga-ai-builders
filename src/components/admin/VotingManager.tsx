@@ -6,8 +6,10 @@ import {
   closeCommunityVote,
   createCommunityVote,
   deleteCommunityVote,
+  getVotingFeatureAccess,
   listAdminCommunityVotes,
   normalizeCommunityVoteInput,
+  setVotingFeatureEnabled,
   updateCommunityVote,
   type CommunityVoteInput
 } from '@/lib/voting';
@@ -34,17 +36,29 @@ export default function VotingManager() {
   const [options, setOptions] = useState<string[]>(blankOptions);
   const [previewing, setPreviewing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [visibilityBusy, setVisibilityBusy] = useState(false);
+  const [votingEnabled, setVotingEnabled] = useState<boolean | null>(null);
+  const [visibilityMessage, setVisibilityMessage] = useState('');
+  const [visibilityError, setVisibilityError] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const loadSequence = useRef(0);
+  const visibilitySequence = useRef(0);
 
   const load = useCallback(async () => {
     const sequence = ++loadSequence.current;
+    const visibilityAtStart = visibilitySequence.current;
     setLoading(true); setError('');
     try {
-      const rows = await listAdminCommunityVotes();
-      if (sequence === loadSequence.current) setVotes(rows);
+      const [rows, access] = await Promise.all([
+        listAdminCommunityVotes(),
+        getVotingFeatureAccess()
+      ]);
+      if (sequence === loadSequence.current) {
+        setVotes(rows);
+        if (visibilityAtStart === visibilitySequence.current) setVotingEnabled(access.is_enabled);
+      }
     } catch (caught) {
       if (sequence === loadSequence.current) setError(toUserMessage('admin-load', caught));
     } finally {
@@ -54,7 +68,10 @@ export default function VotingManager() {
 
   useEffect(() => {
     void load();
-    return () => { loadSequence.current += 1; };
+    return () => {
+      loadSequence.current += 1;
+      visibilitySequence.current += 1;
+    };
   }, [load]);
 
   function currentInput(): CommunityVoteInput {
@@ -163,10 +180,62 @@ export default function VotingManager() {
     }
   }
 
+  async function toggleVotingVisibility() {
+    if (votingEnabled === null || loading || busy) return;
+    const nextEnabled = !votingEnabled;
+    const sequence = ++visibilitySequence.current;
+    setVisibilityBusy(true); setVisibilityMessage(''); setVisibilityError('');
+    try {
+      const saved = await setVotingFeatureEnabled(nextEnabled);
+      if (sequence === visibilitySequence.current) {
+        setVotingEnabled(saved);
+        setVisibilityMessage(saved
+          ? 'Voting is on. Members can see the links and public Voting page.'
+          : 'Voting is off. Links are hidden and only organizers can open the Voting page.');
+      }
+    } catch (caught) {
+      if (sequence === visibilitySequence.current) setVisibilityError(toUserMessage('voting-admin', caught));
+    } finally {
+      if (sequence === visibilitySequence.current) {
+        visibilitySequence.current += 1;
+        setVisibilityBusy(false);
+      }
+    }
+  }
+
   const normalizedPreview = previewing ? normalizeCommunityVoteInput(currentInput()) : null;
 
   return (
     <div className="space-y-7">
+      <section className="card grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6" aria-labelledby="voting-visibility-title" aria-busy={visibilityBusy}>
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-limewash">Public visibility</p>
+          <h2 id="voting-visibility-title" className="mt-2 text-xl font-bold text-white">Voting is {votingEnabled === null ? 'loading' : votingEnabled ? 'on' : 'off'}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-braga-200">
+            {votingEnabled === null
+              ? 'Checking the current visibility setting…'
+              : votingEnabled
+                ? 'Members can see Voting in the menu and footer and open the public page.'
+                : 'Voting links are hidden. Only organizers can open the page and manage existing votes.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={Boolean(votingEnabled)}
+          aria-label="Voting public visibility"
+          className={`relative inline-flex h-12 w-24 shrink-0 items-center rounded-full border p-1 transition ${votingEnabled ? 'border-limewash bg-limewash/20' : 'border-braga-300/40 bg-ink-950/60'}`}
+          onClick={() => void toggleVotingVisibility()}
+          disabled={visibilityBusy || loading || busy || votingEnabled === null}
+        >
+          <span className={`grid h-9 w-9 place-items-center rounded-full text-xs font-black uppercase transition-transform ${votingEnabled ? 'translate-x-11 bg-limewash text-ink-950' : 'translate-x-0 bg-braga-300 text-ink-950'}`} aria-hidden="true">
+            {votingEnabled ? 'On' : 'Off'}
+          </span>
+        </button>
+        {visibilityMessage && <p className="status-message sm:col-span-2" role="status">{visibilityMessage}</p>}
+        {visibilityError && <p className="error-message sm:col-span-2" role="alert">{visibilityError}</p>}
+      </section>
+
       <form onSubmit={preview} className="card space-y-5 p-5 sm:p-6" aria-busy={busy}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div><h2 className="text-xl font-bold text-white">{editingId ? 'Edit vote' : 'Create a vote'}</h2><p className="mt-2 text-sm text-braga-200">Draft it, preview the public card, then publish. Content locks after the first ballot.</p></div>

@@ -44,15 +44,21 @@ describe('launch frontend contracts', () => {
 
   test('mobile navigation and auth-aware controls are wired', async () => {
     const nav = await read('src/components/Nav.astro');
+    const footer = await read('src/components/Footer.astro');
+    const votingLink = await read('src/components/voting/VotingFeatureLink.tsx');
     expect(nav).toContain('mobile-menu');
     expect(nav).toContain('AuthStatus client:load');
     expect(nav).toContain('href="/posts"');
     expect(nav).toContain('href="/events"');
-    expect(nav).toContain('href="/voting"');
     expect(nav).toContain('href="/members"');
     expect(nav.match(/>Posts<\/a>/g)).toHaveLength(2);
-    expect(nav.match(/>Voting<\/a>/g)).toHaveLength(2);
+    expect(nav.match(/<VotingFeatureLink/g)).toHaveLength(2);
     expect(nav).not.toContain('>Ideas</a>');
+    expect(footer).toContain('<VotingFeatureLink className="hover:text-limewash" client:load />');
+    expect(votingLink).toContain('getVotingFeatureAccess');
+    expect(votingLink).toContain('shouldShowVotingLink(access)');
+    expect(votingLink).toContain('if (!visible) return null');
+    expect(votingLink).toContain('href="/voting"');
   });
 
   test('posts use the canonical route, sidebar controls, modal composer, and author-first cards', async () => {
@@ -107,7 +113,7 @@ describe('launch frontend contracts', () => {
     expect(ranking).toContain('if (!profile?.handle) continue');
   });
 
-  test('community voting exposes public live results and organizer-only management', async () => {
+  test('community voting is feature-gated publicly and organizer-controlled', async () => {
     const page = await read('src/pages/voting.astro');
     const board = await read('src/components/voting/VotingBoard.tsx');
     const adminPage = await read('src/pages/admin/voting.astro');
@@ -121,13 +127,25 @@ describe('launch frontend contracts', () => {
     expect(board).toContain('Sign in with your member account');
     expect(board).toContain('Update my vote');
     expect(board).toContain('Create a new poll');
-    expect(board).toContain('getCurrentMemberRole');
+    expect(board).toContain('operations.access()');
+    expect(board.indexOf('const rows = await operations.list()')).toBeLessThan(board.indexOf('const access = await operations.access()'));
+    expect(board).toContain('canViewCommunityVoting(access)');
+    expect(board).toContain('!featureAccess || !canViewVoting');
+    expect(board).toContain('Page not found');
+    expect(board).toContain('Voting is currently off. Organizers can still review these results.');
     expect(board).toContain('{isAdmin && <a className="btn-primary" href="/admin/voting">Create a new poll</a>}');
     expect(board).toContain('const refresh = useCallback(() => load(false)');
+    expect(client).toContain("rpc('get_voting_feature_access'");
+    expect(client).toContain("rpc('admin_set_voting_feature_enabled'");
     expect(client).toContain("rpc('list_public_community_votes'");
     expect(client).toContain("rpc('submit_community_ballot'");
     expect(adminPage).toContain('mode="voting"');
     expect(adminDashboard).toContain("mode === 'voting'");
+    expect(manager).toContain('role="switch"');
+    expect(manager).toContain('Voting public visibility');
+    expect(manager).toContain('setVotingFeatureEnabled');
+    expect(manager).toContain('const visibilitySequence = useRef(0)');
+    expect(manager).toContain('visibilityBusy || loading || busy || votingEnabled === null');
     expect(manager).toContain('Preview vote');
     expect(manager).toContain('Save draft');
     expect(manager).toContain('Publish vote');

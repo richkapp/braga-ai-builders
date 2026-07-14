@@ -92,6 +92,11 @@ export type Registration = {
   updated_at: string;
 };
 
+export type VotingFeatureAccess = {
+  is_enabled: boolean;
+  viewer_is_admin: boolean;
+};
+
 export type CommunityVoteStatus = 'draft' | 'published' | 'closed';
 
 export type CommunityVoteNamedVoter = {
