@@ -9,6 +9,7 @@ Posts:
 - Reworked feed cards around the poster's avatar, name, and publication date, with clearly distinct member and anonymous fallback artwork.
 - Tightened post-card hierarchy so compact author metadata and tags sit above and below the more prominent title at the same supporting text size.
 - Added an avatar-only Member filter ranked by post count, with hover names, six-member collapse, and an expandable full author list.
+- Added detail-only threaded comments with replies to replies, member or anonymous attribution for signed-in members, comment upvotes, and feed-level comment counts.
 - Renamed the signed-in Settings navigation label and page heading to Dashboard.
 - Kept post creation available through feed refreshes and read failures, and prevented magic-link requests from racing backward navigation in the composer.
 
