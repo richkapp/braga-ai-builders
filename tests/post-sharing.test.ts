@@ -7,17 +7,14 @@ describe('post sharing', () => {
     const outcome = await sharePost({
       client: { share: async (payload) => { payloads.push(payload); } },
       origin: 'https://braga.example',
-      slug: 'useful-post',
-      title: 'Useful post'
+      slug: 'useful-post'
     });
 
     expect(outcome).toBe('shared');
     expect(payloads).toEqual([{
-      title: 'Useful post',
-      text: 'Useful post — Braga AI Builders',
       url: 'https://braga.example/posts/useful-post'
     }]);
-    expect(buildPostShareData('https://braga.example', 'another-post', 'Another post').url)
+    expect(buildPostShareData('https://braga.example', 'another-post').url)
       .toBe('https://braga.example/posts/another-post');
   });
 
@@ -28,15 +25,13 @@ describe('post sharing', () => {
     expect(await sharePost({
       client: { clipboard },
       origin: 'https://braga.example',
-      slug: 'copy-this',
-      title: 'Copy this'
+      slug: 'copy-this'
     })).toBe('copied');
 
     expect(await sharePost({
       client: { share: async () => { throw new Error('share failed'); }, clipboard },
       origin: 'https://braga.example',
-      slug: 'fallback',
-      title: 'Fallback'
+      slug: 'fallback'
     })).toBe('copied');
 
     expect(copied).toEqual([
@@ -56,8 +51,7 @@ describe('post sharing', () => {
         clipboard: { writeText: async (value: string) => { copied.push(value); } }
       },
       origin: 'https://braga.example',
-      slug: 'cancelled',
-      title: 'Cancelled'
+      slug: 'cancelled'
     });
 
     expect(outcome).toBe('cancelled');

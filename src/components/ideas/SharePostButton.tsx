@@ -29,7 +29,7 @@ export default function SharePostButton({ slug, title }: Props) {
     setBusy(true);
 
     try {
-      const outcome = await sharePost({ client: navigator, origin: window.location.origin, slug, title });
+      const outcome = await sharePost({ client: navigator, origin: window.location.origin, slug });
       if (outcome === 'shared') showStatus('shared');
       if (outcome === 'copied') showStatus('copied');
     } catch {
