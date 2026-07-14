@@ -10,6 +10,10 @@ Posts:
 - Tightened post-card hierarchy so compact author metadata and tags sit above and below the more prominent title at the same supporting text size.
 - Added an avatar-only Member filter ranked by post count, with hover names, six-member collapse, and an expandable full author list.
 - Added detail-only threaded comments with replies to replies, member or anonymous attribution for signed-in members, comment upvotes, and feed-level comment counts.
+- Reworked post-detail discussion into a minimal Reddit-style thread: a collapsed **Leave a Comment** control, compact inline composer, nested reply rails, and only upvote/reply actions.
+- Moved **Post anonymously** into the initial post form, defaulted it off for signed-in members, and locked it on with account guidance for signed-out visitors.
+- Added super-admin database-backed switches for anonymous posts, signed-out posts, anonymous comments, and anonymous replies.
+- Preserved replies when an author or parent comment is removed, made feed comment counts fail soft, and restored reliable `#comments` navigation after async detail loading.
 - Renamed the signed-in Settings navigation label and page heading to Dashboard.
 - Kept post creation available through feed refreshes and read failures, and prevented magic-link requests from racing backward navigation in the composer.
 

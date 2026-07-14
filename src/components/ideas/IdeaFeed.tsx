@@ -52,7 +52,7 @@ async function hydrateIdeas(rows: Idea[], viewerId: string | null, relationships
   if (ids.length === 0) return rows;
   const [{ data: counts, error: countError }, commentCounts] = await Promise.all([
     supabase.from('idea_vote_counts').select('idea_id, upvote_count').in('idea_id', ids),
-    listIdeaCommentCounts(ids)
+    listIdeaCommentCounts(ids).catch(() => [])
   ]);
   if (countError) throw countError;
   let voted = new Set<string>();

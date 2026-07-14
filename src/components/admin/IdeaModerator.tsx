@@ -3,10 +3,11 @@ import { deleteIdea, listAdminIdeas, updateIdeaStatus } from '@/lib/admin';
 import { toUserMessage } from '@/lib/errors';
 import type { Idea } from '@/lib/types';
 import { ripCategoryLabel, ripTagLabel } from '@/lib/rips';
+import PostParticipationManager from './PostParticipationManager';
 
 const statuses: Idea['status'][] = ['open', 'selected', 'closed', 'hidden'];
 
-export default function IdeaModerator() {
+export default function IdeaModerator({ isSuperAdmin = false }: { isSuperAdmin?: boolean }) {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -32,6 +33,7 @@ export default function IdeaModerator() {
 
   return (
     <div className="space-y-4">
+      {isSuperAdmin && <PostParticipationManager />}
       {message && <p className="status-message" role="status">{message}</p>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {ideas.map((idea) => (

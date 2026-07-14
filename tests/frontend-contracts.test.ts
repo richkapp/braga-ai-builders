@@ -153,6 +153,21 @@ describe('launch frontend contracts', () => {
     expect(manager).toContain('options.length < 10');
   });
 
+  test('super admins control post participation modes', async () => {
+    const dashboard = await read('src/components/admin/AdminDashboard.tsx');
+    const moderator = await read('src/components/admin/IdeaModerator.tsx');
+    const manager = await read('src/components/admin/PostParticipationManager.tsx');
+    const participation = await read('src/lib/postParticipation.ts');
+    expect(dashboard).toContain("isSuperAdmin={role === 'super_admin'}");
+    expect(moderator).toContain('isSuperAdmin && <PostParticipationManager />');
+    expect(manager).toContain('Allow anonymous posts');
+    expect(manager).toContain('Allow posts from logged-out users');
+    expect(manager).toContain('Allow anonymous comments');
+    expect(manager).toContain('Allow anonymous replies');
+    expect(manager).toContain('role="switch"');
+    expect(participation).toContain("rpc('super_admin_set_post_participation_setting'");
+  });
+
   test('idea posting offers anonymous or account attribution without losing the draft', async () => {
     const composer = await read('src/components/ideas/IdeaComposer.tsx');
     const draft = await read('src/lib/ideaDraft.ts');
@@ -164,7 +179,9 @@ describe('launch frontend contracts', () => {
     const profile = await read('src/components/profile/ProfileForm.tsx');
     expect(composer).not.toContain('AuthRequired');
     expect(composer).toContain('Post anonymously');
-    expect(composer).toContain('Already a member? Sign in and attach my profile');
+    expect(composer).toContain('checked={signedIn ? postAnonymously : true}');
+    expect(composer).toContain('disabled={!signedIn || !anonymousPostsAllowed || settingsLoading}');
+    expect(composer).toContain('create an account');
     expect(composer).toContain('Post with my profile');
     expect(composer).toContain('Create a new post');
     expect(composer).toContain('showModal()');
@@ -187,6 +204,7 @@ describe('launch frontend contracts', () => {
     expect(feed).toContain('Mark done');
     expect(feed).toContain('deleteIdea');
     expect(ideas).toContain('createAnonymousIdea');
+    expect(ideas).toContain("rpc('post_member_anonymous_idea'");
     expect(ideas).toContain('supabase.auth.getSession()');
     expect(events).toContain('isAnonymousUser');
     expect(profile).toContain('isAnonymousUser');
@@ -200,15 +218,21 @@ describe('launch frontend contracts', () => {
     const commentLib = await read('src/lib/postComments.ts');
     expect(detail).toContain('<PostComments ideaId={idea.id} />');
     expect(feed).not.toContain('listIdeaComments(');
-    expect(feed).toContain('listIdeaCommentCounts(ids)');
+    expect(feed).toContain('listIdeaCommentCounts(ids).catch(() => [])');
     expect(feed).toContain('href={`/posts/${idea.slug}#comments`}');
+    expect(detail).toContain("window.location.hash !== '#comments'");
+    expect(detail).toContain("document.getElementById('comments')?.scrollIntoView");
     expect(feed).toContain('idea.comment_count ?? 0');
     expect(comments).toContain('buildPostCommentTree(comments)');
     expect(controls).toContain('comment.replies.map((reply) => <CommentCard');
     expect(controls).toContain('onCreateReply(comment.id, body, postAnonymously)');
-    expect(controls).toContain('Comment anonymously');
+    expect(controls).toContain('Post anon?');
+    expect(comments).toContain('Leave a Comment');
+    expect(comments).not.toContain('Sort by');
+    expect(controls).not.toContain('Award');
+    expect(controls).not.toContain('Share');
     expect(comments).toContain("access === 'active'");
-    expect(comments).toContain('Sign in to comment');
+    expect(comments).toContain('sign in required');
     expect(comments).toContain('toggleIdeaCommentUpvote');
     expect(commentLib).toContain("rpc('list_idea_comments'");
     expect(commentLib).toContain("rpc('create_idea_comment'");
@@ -353,12 +377,14 @@ describe('launch frontend contracts', () => {
     expect(form).toContain('My email address will never be used for marketing.');
     expect(form).toContain('emailConsent: true');
     expect(form).toContain('required');
-    expect(composer).toContain('Already a member? Sign in and attach my profile');
+    expect(composer).toContain('Already a member? Sign in');
+    expect(composer).toContain('create an account</a> with a member invitation');
+    expect(composer).toContain('href={communityConfig.whatsappUrl}');
     expect(composer).not.toContain('Create account and post');
     expect(composer).toContain('I agree to receive a one-time magic-link email sent through Supabase.');
     expect(composer).toContain('My email address will never be used for marketing.');
     expect(composer).toContain('emailBusy || !emailConsent');
-    expect(composer).toContain("onClick={() => setStage('choice')} disabled={emailBusy}");
+    expect(composer).toContain("onClick={() => setStage('form')} disabled={emailBusy}");
     expect(edge).toContain("payload.context === 'signin'");
     expect(edge).toContain('create_user: false');
     expect(edge).toContain('If that email belongs to a member, a sign-in link is on its way.');

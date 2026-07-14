@@ -50,7 +50,7 @@ export default function AdminDashboard({ mode = 'overview' }: Props) {
       {mode === 'invites' && <InviteManager />}
       {mode === 'events' && <EventManager />}
       {mode === 'voting' && <VotingManager />}
-      {mode === 'ideas' && <IdeaModerator />}
+      {mode === 'ideas' && <IdeaModerator isSuperAdmin={role === 'super_admin'} />}
       {mode === 'bug-reports' && <BugReportManager />}
     </div>
   );
