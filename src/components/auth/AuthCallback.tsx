@@ -59,7 +59,7 @@ export default function AuthCallback() {
 
         // Remove credentials before any follow-up request so they never remain in
         // browser history, screenshots, analytics, or copied URLs.
-        window.history.replaceState({}, document.title, '/auth/confirm');
+        window.history.replaceState(window.history.state, document.title, '/auth/confirm');
 
         try {
           await claimPendingInvite();
@@ -69,7 +69,7 @@ export default function AuthCallback() {
 
         window.location.replace(returnToPosts ? '/posts?restoreIdea=1' : '/settings');
       } catch (caught) {
-        window.history.replaceState({}, document.title, '/auth/confirm');
+        window.history.replaceState(window.history.state, document.title, '/auth/confirm');
         setFailed(true);
         setMessage(toUserMessage('auth-callback', caught));
       }

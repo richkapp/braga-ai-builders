@@ -456,7 +456,8 @@ describe('launch frontend contracts', () => {
     expect(hub).toContain("searchParams.get('tab')");
     expect(hub).toContain('useState<SettingsTab>(initialTab)');
     expect(hub).toContain("aria-current={activeTab === key ? 'page' : undefined}");
-    expect(hub).toContain('window.history.pushState');
+    expect(hub).toContain("navigate(url.href, { history: 'push' })");
+    expect(hub).toContain('sync();');
     expect(hub).toContain('IdeaFeed');
     expect(feed).toContain('useState<PostFeedView>(initialView)');
     expect(feed).toContain('My posts');

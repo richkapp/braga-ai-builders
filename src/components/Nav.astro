@@ -30,3 +30,10 @@ import { communityConfig } from '../config/community';
     </details>
   </nav>
 </header>
+
+<script>
+  document.addEventListener('astro:before-preparation', () => {
+    const menu = document.querySelector<HTMLDetailsElement>('header[data-astro-transition-persist="site-header"] details.mobile-menu');
+    if (menu) menu.removeAttribute('open');
+  });
+</script>
