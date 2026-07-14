@@ -7,12 +7,14 @@ import { attachPublicAuthors, getMyPostRelationships, updateOwnIdea, type PostRe
 import { RIP_CATEGORIES, ripCategoryLabel, ripTagLabel } from '@/lib/rips';
 import { deleteIdea, getCurrentMemberRole, updateIdeaStatus, type MemberRole } from '@/lib/admin';
 import { isAnonymousUser } from '@/lib/anonymous';
+import { ideaMatchesMember, rankPostingMembers } from '@/lib/postMemberFilters';
 import type { Event, Idea, RipCategory, RipTag } from '@/lib/types';
 import AuthRequired from '@/components/auth/AuthRequired';
 import UpvoteButton from './UpvoteButton';
 import BookmarkButton, { type BookmarkAccess } from './BookmarkButton';
 import IdeaComposer from './IdeaComposer';
 import PostAuthorIdentity from './PostAuthorIdentity';
+import PostMemberFilters from './PostMemberFilters';
 import RipTaxonomyPicker from './RipTaxonomyPicker';
 
 import { usePostTagCatalog } from './usePostTagCatalog';
@@ -143,6 +145,8 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
   const [view, setView] = useState<FeedView>(initialView);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [selectedTags, setSelectedTags] = useState<RipTag[]>([]);
+  const [selectedMemberHandle, setSelectedMemberHandle] = useState<string | null>(null);
+  const [membersExpanded, setMembersExpanded] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -215,18 +219,26 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     for (const idea of ideas) counts.set(idea.category, (counts.get(idea.category) ?? 0) + 1);
     return [...RIP_CATEGORIES].sort((left, right) => (counts.get(right.value) ?? 0) - (counts.get(left.value) ?? 0));
   }, [ideas]);
+  const memberOptions = useMemo(() => rankPostingMembers(ideas), [ideas]);
+
+  useEffect(() => {
+    if (selectedMemberHandle && !memberOptions.some((member) => member.handle === selectedMemberHandle)) {
+      setSelectedMemberHandle(null);
+    }
+  }, [memberOptions, selectedMemberHandle]);
 
   const filteredIdeas = useMemo(() => {
     const matching = ideas.filter((idea) => {
       if (view === 'mine' && !idea.viewer_is_author) return false;
       if (view === 'bookmarks' && !idea.viewer_has_bookmarked) return false;
       return (categoryFilter === 'all' || idea.category === categoryFilter)
-        && selectedTags.every((tag) => idea.tags.includes(tag));
+        && selectedTags.every((tag) => idea.tags.includes(tag))
+        && ideaMatchesMember(idea, selectedMemberHandle);
     });
     return view === 'bookmarks'
       ? [...matching].sort((left, right) => Date.parse(right.viewer_bookmarked_at ?? '1970-01-01') - Date.parse(left.viewer_bookmarked_at ?? '1970-01-01'))
       : matching;
-  }, [ideas, view, categoryFilter, selectedTags]);
+  }, [ideas, view, categoryFilter, selectedTags, selectedMemberHandle]);
 
   async function markDone(idea: Idea) {
     setError('');
@@ -259,7 +271,9 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     setView(nextView);
     setCategoryFilter('all');
     setSelectedTags([]);
+    setSelectedMemberHandle(null);
     setFiltersExpanded(false);
+    setMembersExpanded(false);
   }
 
   if (layout === 'sidebar' && (loading || error)) {
@@ -306,6 +320,13 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
           {tagCatalog.length > collapsedTagLimit && <button type="button" className="mx-auto mt-2 flex min-h-8 items-center justify-center rounded-full px-4 text-braga-300 transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-violet-300/60" aria-expanded={filtersExpanded} aria-controls="post-tag-filters" aria-label={filtersExpanded ? 'Show fewer tag filters' : 'Show all tag filters'} onClick={() => setFiltersExpanded((value) => !value)}><LuChevronDown className={`h-4 w-4 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} aria-hidden="true" /></button>}
           {tagCatalogError && <p className="mt-3 text-sm text-amber-200" role="alert">{tagCatalogError}</p>}
         </div>
+        <PostMemberFilters
+          members={memberOptions}
+          selectedHandle={selectedMemberHandle}
+          expanded={membersExpanded}
+          onSelectedHandleChange={setSelectedMemberHandle}
+          onExpandedChange={setMembersExpanded}
+        />
       </>}
     </section>
   );

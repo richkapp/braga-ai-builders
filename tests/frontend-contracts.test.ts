@@ -89,6 +89,23 @@ describe('launch frontend contracts', () => {
     expect(settings).toContain("communityPageTitle('Dashboard')");
   });
 
+  test('post member filters rank active posters, stay avatar-only, and expand beyond six', async () => {
+    const feed = await read('src/components/ideas/IdeaFeed.tsx');
+    const memberFilters = await read('src/components/ideas/PostMemberFilters.tsx');
+    const ranking = await read('src/lib/postMemberFilters.ts');
+    expect(feed).toContain('rankPostingMembers(ideas)');
+    expect(feed).toContain('ideaMatchesMember(idea, selectedMemberHandle)');
+    expect(feed).toContain('<PostMemberFilters');
+    expect(memberFilters).toContain('collapsedMemberLimit = 6');
+    expect(memberFilters).toContain('AvatarImage');
+    expect(memberFilters).toContain('role="tooltip"');
+    expect(memberFilters).toContain('group-hover:opacity-100');
+    expect(memberFilters).toContain('aria-label={`Filter posts by member:');
+    expect(memberFilters).toContain("aria-label={expanded ? 'Show fewer member filters' : 'Show all member filters'}");
+    expect(ranking).toContain('right.postCount - left.postCount');
+    expect(ranking).toContain('if (!profile?.handle) continue');
+  });
+
   test('community voting exposes public live results and organizer-only management', async () => {
     const page = await read('src/pages/voting.astro');
     const board = await read('src/components/voting/VotingBoard.tsx');
