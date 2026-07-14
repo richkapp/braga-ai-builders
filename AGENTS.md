@@ -41,6 +41,7 @@ Core scope:
 - Keep post voting upvote-only.
 - Keep event creation, moderation, and full member access organizer-only.
 - Use service-role keys only inside trusted Edge Functions or maintainer operations.
+- Explicitly grant `service_role` the required privileges on every newly created private table; earlier `grant ... on all tables` statements apply only to tables that existed when they ran.
 - Every Supabase client operation in React needs loading and safe error states.
 - Add static or executable checks for new authorization boundaries.
 - Never commit production credentials, auth links, sessions, member exports, or `.env` files.
@@ -68,5 +69,6 @@ bun run verify
 - Verify production authorization with affected-row counts and readback because an RLS-denied update may return no API error and zero rows.
 - Prefer rollback-only database smoke transactions over creating temporary production accounts; production email tests still require explicit approval and a controlled inbox.
 - After repository or deployment-source changes, prove the connection with a downstream pull request, a successful Vercel preview, a successful production deployment from downstream `main`, and an HTTP check of the public site.
+- Before treating a Vercel preview as QA evidence, verify the final effective URL still belongs to the preview deployment. A deployment-protected preview can return HTTP 200 after redirecting to `vercel.com/login`; report preview QA as blocked and use local plus production verification instead of counting the login page as a pass.
 - Verify deployed routes and authorization boundaries before reporting a release complete.
 - Production email tests require explicit approval and a controlled deliverable inbox; never use disposable or non-deliverable addresses.
