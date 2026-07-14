@@ -96,6 +96,26 @@ describe('delivery security contracts', () => {
     expect(migration).toContain('Votes with ballots cannot be deleted');
   });
 
+  test('community voting deadlines and edit locks survive waits and ballot cleanup', async () => {
+    const migration = await read('supabase/migrations/030_harden_community_voting_lifecycle.sql');
+    const submitFunction = migration.slice(
+      migration.indexOf('create or replace function public.submit_community_ballot('),
+      migration.indexOf("revoke all on function public.enforce_community_vote_lock()")
+    );
+    expect(migration).toContain('add column first_ballot_at timestamptz');
+    expect(migration).toContain('set first_ballot_at = first_ballot.created_at');
+    expect(migration).toContain('min(ballot.created_at) as created_at');
+    expect(migration).toContain('create trigger protect_community_vote_after_ballot');
+    expect(migration).toContain('create trigger protect_community_vote_options_after_ballot');
+    expect(migration).toContain("raise exception 'Votes with ballots are permanent'");
+    expect(migration).toContain("raise exception 'Options for votes with ballots are permanent'");
+    expect(migration).toContain('vote.first_ballot_at is null');
+    expect(migration).toContain('selected_vote.first_ballot_at is not null');
+    expect(migration).toContain('selected_vote.closes_at <= clock_timestamp()');
+    expect(submitFunction).toContain('set first_ballot_at = coalesce(first_ballot_at, clock_timestamp())');
+    expect(submitFunction).not.toContain('selected_vote.closes_at <= now()');
+  });
+
   test('invite delivery is reserved, delivered, claimed, or failed explicitly', async () => {
     const baseline = await read('supabase/migrations/006_delivery_readiness.sql');
     const rolling = await read('supabase/migrations/023_rolling_member_invites.sql');
