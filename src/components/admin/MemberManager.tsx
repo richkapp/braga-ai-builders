@@ -61,7 +61,7 @@ export default function MemberManager({ isSuperAdmin }: Props) {
       demote: `Remove ${member.display_name}'s admin access?`,
       suspend: `Suspend ${member.display_name}? They will be signed out as their session expires and blocked from community actions immediately.`,
       unsuspend: `Restore ${member.display_name}'s account access?`,
-      delete: `Permanently delete ${member.display_name}? This removes their account, profile, posts, votes, and registrations. This cannot be undone.`
+      delete: `Permanently delete ${member.display_name}? This removes their account, profile photo, posts, votes, and registrations. This cannot be undone.`
     };
     if (!window.confirm(prompts[action])) return;
 
@@ -73,7 +73,7 @@ export default function MemberManager({ isSuperAdmin }: Props) {
       if (action === 'demote') await setMemberRole(member.id, 'member');
       if (action === 'suspend') await setMemberSuspension(member.id, true);
       if (action === 'unsuspend') await setMemberSuspension(member.id, false);
-      if (action === 'delete') await deleteMember(member.id);
+      if (action === 'delete') await deleteMember(member.id, member.avatar_path);
       setMembers(await listAdminMembers());
       setMessage(action === 'delete' ? `${member.display_name} was deleted.` : `${member.display_name} was updated.`);
     } catch (caught) {

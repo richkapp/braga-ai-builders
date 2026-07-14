@@ -217,6 +217,28 @@ using (
   )
 );
 
+-- Account deletion removes the avatar through the Storage API first. Give only
+-- super admins the metadata/delete permissions needed for that cleanup.
+drop policy if exists "Super admins read avatar metadata" on storage.objects;
+create policy "Super admins read avatar metadata"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'avatars'
+  and public.is_super_admin()
+);
+
+drop policy if exists "Super admins delete member avatars" on storage.objects;
+create policy "Super admins delete member avatars"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'avatars'
+  and public.is_super_admin()
+);
+
 -- Append only public-safe avatar metadata. Legacy avatar_url values continue to
 -- render until a member uploads or removes a native avatar.
 create or replace view public.public_profiles as
@@ -316,14 +338,69 @@ begin
 end;
 $$;
 
+-- Enforce cleanup at the database boundary too. The short table lock closes
+-- the race where the target could upload again between cleanup and deletion.
+create or replace function public.super_admin_delete_member(target_user_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  current_target_role public.member_role;
+  current_avatar_path text;
+begin
+  if not public.is_super_admin() then
+    raise exception 'Super-admin access required' using errcode = '42501';
+  end if;
+  if target_user_id is null or target_user_id = current_user_id then
+    raise exception 'You cannot delete your own account' using errcode = '42501';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended('member-admin:' || target_user_id::text, 0));
+  select profiles.role, profiles.avatar_path
+  into current_target_role, current_avatar_path
+  from public.profiles
+  where profiles.id = target_user_id
+  for update;
+
+  if not found then
+    raise exception 'Member not found' using errcode = 'P0002';
+  end if;
+  if current_target_role = 'super_admin' then
+    raise exception 'Super-admin accounts cannot be deleted here' using errcode = '42501';
+  end if;
+
+  lock table storage.objects in share row exclusive mode;
+  if current_avatar_path is not null and exists (
+    select 1
+    from storage.objects
+    where objects.bucket_id = 'avatars'
+      and objects.name = current_avatar_path
+  ) then
+    raise exception 'Delete the member avatar before deleting the account' using errcode = '23514';
+  end if;
+
+  delete from auth.users where id = target_user_id;
+  if not found then
+    raise exception 'Auth account not found' using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
 revoke all on function public.reserve_my_avatar_path() from public, anon;
 revoke all on function public.confirm_my_avatar_upload(text) from public, anon;
 revoke all on function public.clear_my_avatar_path(text) from public, anon;
 revoke all on function public.admin_list_members() from public, anon;
+revoke all on function public.super_admin_delete_member(uuid) from public, anon;
 grant execute on function public.reserve_my_avatar_path() to authenticated;
 grant execute on function public.confirm_my_avatar_upload(text) to authenticated;
 grant execute on function public.clear_my_avatar_path(text) to authenticated;
 grant execute on function public.admin_list_members() to authenticated;
+grant execute on function public.super_admin_delete_member(uuid) to authenticated;
 
 grant select (avatar_path) on table public.profiles to authenticated;
 revoke update (avatar_url) on table public.profiles from authenticated;

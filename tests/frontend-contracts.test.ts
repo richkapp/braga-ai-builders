@@ -319,6 +319,13 @@ describe('launch frontend contracts', () => {
     expect(avatar).toContain("cacheControl: '31536000'");
   });
 
+  test('member deletion cleans up a native avatar before removing the account', async () => {
+    const admin = await read('src/lib/admin.ts');
+    const manager = await read('src/components/admin/MemberManager.tsx');
+    expect(admin).toContain("supabase.storage.from('avatars').remove([avatarPath])");
+    expect(manager).toContain('deleteMember(member.id, member.avatar_path)');
+  });
+
   test('organizer routes cover the complete v1 operations', async () => {
     for (const path of [
       'src/components/admin/InviteManager.tsx',
