@@ -39,6 +39,7 @@ Core scope:
 - Require explicit consent before sending a transactional login/signup email.
 - Do not use member emails for marketing.
 - Keep post voting upvote-only.
+- Keep post comments Reddit-like and minimal: start with a collapsed **Leave a Comment** control; expose only text, anonymous attribution, cancel, post, upvote, and reply; preserve nested replies without adding sorting, search, media/GIFs, formatting tools, awards, or sharing.
 - Keep event creation, moderation, and full member access organizer-only.
 - Use service-role keys only inside trusted Edge Functions or maintainer operations.
 - Explicitly grant `service_role` the required privileges on every newly created private table; earlier `grant ... on all tables` statements apply only to tables that existed when they ran.
@@ -59,6 +60,7 @@ bun run verify
 ## Delivery
 
 - Use feature branches and pull requests; do not push application work directly to `main`.
+- Pass `-R richkapp/braga-ai-builders` to `gh` PR and repository-mutation commands in this checkout; with both `origin` and `upstream` configured, implicit repository detection can select `richkapp/local-community-platform`.
 - Sync upstream on a `sync/upstream-*` branch, preserve intentional Braga configuration, run verification, and merge through a pull request.
 - When promoting a Braga-born feature upstream, create a focused branch from upstream `main`, remove Braga assumptions, add generic configuration and safe defaults, and document the reusable community problem.
 - Treat optional external services as disabled until each installation supplies its own configuration.
