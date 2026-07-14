@@ -35,26 +35,68 @@ describe('post comment controls', () => {
     const submissions: Array<{ body: string; postAnonymously: boolean }> = [];
     const view = render(<CommentForm
       label="Add a comment"
-      submitLabel="Post comment"
-      onSubmit={async (body, postAnonymously) => { submissions.push({ body, postAnonymously }); }}
+      anonymousKind="comment"
+      allowAnonymous
+      onCancel={() => {}}
+      onSubmit={async (body: string, postAnonymously: boolean) => { submissions.push({ body, postAnonymously }); }}
     />);
 
     fireEvent.change(view.getByLabelText('Add a comment'), { target: { value: 'Member comment' } });
     await act(async () => {
-      fireEvent.click(view.getByRole('button', { name: 'Post comment' }));
+      fireEvent.click(view.getByRole('button', { name: 'Post' }));
       await Promise.resolve();
     });
     await waitFor(() => expect(submissions).toContainEqual({ body: 'Member comment', postAnonymously: false }));
-    expect(view.getByRole('button', { name: 'Post comment' }).hasAttribute('disabled')).toBe(true);
+    expect(view.getByRole('button', { name: 'Post' }).hasAttribute('disabled')).toBe(true);
 
     fireEvent.change(view.getByLabelText('Add a comment'), { target: { value: 'Anonymous comment' } });
-    fireEvent.click(view.getByLabelText('Comment anonymously'));
+    fireEvent.click(view.getByLabelText('Post anon?'));
     await act(async () => {
-      fireEvent.click(view.getByRole('button', { name: 'Post comment' }));
+      fireEvent.click(view.getByRole('button', { name: 'Post' }));
       await Promise.resolve();
     });
     await waitFor(() => expect(submissions).toContainEqual({ body: 'Anonymous comment', postAnonymously: true }));
-    expect(view.getByRole('button', { name: 'Post comment' }).hasAttribute('disabled')).toBe(true);
+    expect(view.getByRole('button', { name: 'Post' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  test('disables anonymous mode when organizers turn it off', () => {
+    const view = render(<CommentForm
+      label="Add a comment"
+      anonymousKind="comment"
+      allowAnonymous={false}
+      onCancel={() => {}}
+      onSubmit={async () => {}}
+    />);
+
+    expect(view.getByLabelText('Post anon?').hasAttribute('disabled')).toBe(true);
+    expect(view.getByText('Anonymous comments are disabled.')).toBeTruthy();
+  });
+
+  test('keeps deleted authors distinct from anonymous attribution', async () => {
+    const deletedAuthorComment: PostCommentNode = {
+      id: 'comment-deleted-author',
+      parent_id: null,
+      body: 'The thread remains after the member leaves.',
+      created_at: '2026-07-14T10:00:00Z',
+      is_anonymous: false,
+      profiles: null,
+      upvote_count: 0,
+      viewer_has_upvoted: false,
+      replies: []
+    };
+    const view = render(<CommentCard
+      comment={deletedAuthorComment}
+      depth={0}
+      access="signed-out"
+      replyingTo={null}
+      votingId={null}
+      onReply={() => undefined}
+      onCreateReply={async () => undefined}
+      onVote={async () => undefined}
+      allowAnonymousReplies
+    />);
+    expect(view.getByText('Former member')).toBeTruthy();
+    expect(view.queryByText('Anonymous')).toBeNull();
   });
 
   test('can reply to a reply and invoke its upvote control', async () => {
@@ -70,20 +112,21 @@ describe('post comment controls', () => {
       onReply={() => {}}
       onCreateReply={async (parentId: string, body: string, postAnonymously: boolean) => { replies.push({ parentId, body, postAnonymously }); }}
       onVote={async (commentId: string) => { votes.push(commentId); }}
+      allowAnonymousReplies
     />);
 
     fireEvent.click(view.getByRole('button', { name: 'Upvote comment by Alice Example' }));
     await waitFor(() => expect(votes).toEqual(['reply']));
 
     fireEvent.change(view.getByLabelText('Reply to Alice Example'), { target: { value: 'Nested response' } });
-    fireEvent.click(view.getByLabelText('Comment anonymously'));
+    fireEvent.click(view.getByLabelText('Post anon?'));
     await act(async () => {
-      fireEvent.click(view.getByRole('button', { name: 'Post reply' }));
+      fireEvent.click(view.getByRole('button', { name: 'Post' }));
       await Promise.resolve();
     });
     await waitFor(() => expect(replies).toEqual([
       { parentId: 'reply', body: 'Nested response', postAnonymously: true }
     ]));
-    expect(view.getByRole('button', { name: 'Post reply' }).hasAttribute('disabled')).toBe(true);
+    expect(view.getByRole('button', { name: 'Post' }).hasAttribute('disabled')).toBe(true);
   });
 });

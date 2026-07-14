@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuMessageCircle } from 'react-icons/lu';
 import { getCurrentMemberRole } from '@/lib/admin';
 import { isAnonymousUser } from '@/lib/anonymous';
 import { toUserMessage } from '@/lib/errors';
@@ -10,6 +9,11 @@ import {
   toggleIdeaCommentUpvote
 } from '@/lib/postComments';
 import type { PostComment } from '@/lib/types';
+import {
+  getPostParticipationSettings,
+  lockedPostParticipationSettings,
+  type PostParticipationSettings
+} from '@/lib/postParticipation';
 import { useAuthUser } from '@/components/auth/useAuthUser';
 import { CommentCard, CommentForm, type CommentAccess } from './PostCommentControls';
 
@@ -22,6 +26,9 @@ export default function PostComments({ ideaId }: { ideaId: string }) {
   const [error, setError] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [votingId, setVotingId] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [participation, setParticipation] = useState<PostParticipationSettings>(lockedPostParticipationSettings);
+  const [participationError, setParticipationError] = useState('');
   const loadSequence = useRef(0);
   const accessSequence = useRef(0);
   const voteSequence = useRef(0);
@@ -67,11 +74,28 @@ export default function PostComments({ ideaId }: { ideaId: string }) {
     voteSequence.current += 1;
   }, [accountUserId, ideaId]);
 
+  useEffect(() => {
+    let current = true;
+    getPostParticipationSettings()
+      .then((settings) => {
+        if (!current) return;
+        setParticipation(settings);
+        setParticipationError('');
+      })
+      .catch(() => {
+        if (!current) return;
+        setParticipation(lockedPostParticipationSettings);
+        setParticipationError('Anonymous comment settings could not be loaded.');
+      });
+    return () => { current = false; };
+  }, [ideaId]);
+
   const tree = useMemo(() => buildPostCommentTree(comments), [comments]);
 
   async function create(parentId: string | null, body: string, postAnonymously: boolean) {
     await createIdeaComment({ ideaId, parentId, body, postAnonymously });
     setReplyingTo(null);
+    if (parentId === null) setComposerOpen(false);
     await load(false);
   }
 
@@ -93,27 +117,30 @@ export default function PostComments({ ideaId }: { ideaId: string }) {
   }
 
   return (
-    <section id="comments" className="card p-5 sm:p-6" aria-labelledby="comments-heading">
-      <div className="flex items-center gap-3">
-        <span className="grid h-11 w-11 place-items-center rounded-full border border-violet-300/30 bg-violet-500/10 text-violet-200" aria-hidden="true"><LuMessageCircle className="h-5 w-5" /></span>
-        <div>
-          <h2 id="comments-heading" className="text-2xl font-black text-white">Comments</h2>
-          <p className="text-sm text-braga-300">{comments.length} {comments.length === 1 ? 'comment' : 'comments'}</p>
-        </div>
-      </div>
+    <section id="comments" className="scroll-mt-28 border-t border-white/10 pt-6" aria-labelledby="comments-heading">
+      <h2 id="comments-heading" className="text-lg font-black text-white">Comments <span className="font-semibold text-braga-300">({comments.length})</span></h2>
 
-      <div className="mt-5">
-        {access === 'active' && <CommentForm label="Add a comment" submitLabel="Post comment" onSubmit={(body, postAnonymously) => create(null, body, postAnonymously)} />}
-        {access === 'signed-out' && <div className="rounded-2xl border border-limewash/25 bg-limewash/5 p-4 text-sm leading-6 text-braga-100">Comments can be public or anonymous, but posting requires a member account. <a href="/signin" className="font-bold text-limewash hover:underline">Sign in to comment →</a></div>}
-        {access === 'inactive' && <p className="rounded-2xl border border-amber-300/25 bg-amber-300/5 p-4 text-sm leading-6 text-amber-100">This account’s community membership is not active. Contact an organizer to comment or upvote.</p>}
+      <div className="mt-4">
+        {access === 'active' && (composerOpen
+          ? <CommentForm
+              label="Leave a Comment"
+              anonymousKind="comment"
+              allowAnonymous={participation.allow_anonymous_comments}
+              onCancel={() => setComposerOpen(false)}
+              onSubmit={(body, postAnonymously) => create(null, body, postAnonymously)}
+            />
+          : <button type="button" className="min-h-11 w-full rounded-full border border-braga-300/35 px-4 text-left text-sm text-braga-300 transition hover:border-braga-200 hover:text-white" onClick={() => setComposerOpen(true)}>Leave a Comment</button>)}
+        {access === 'signed-out' && <a className="flex min-h-11 w-full items-center rounded-full border border-braga-300/35 px-4 text-sm text-braga-300 transition hover:border-braga-200 hover:text-white" href="/signin">Leave a Comment <span className="ml-2 text-xs text-braga-300">— sign in required</span></a>}
+        {access === 'inactive' && <button type="button" className="min-h-11 w-full cursor-not-allowed rounded-full border border-braga-300/20 px-4 text-left text-sm text-braga-300" disabled>Commenting is unavailable for this account</button>}
         {access === 'loading' && <p className="text-sm text-braga-300" role="status">Checking comment access…</p>}
       </div>
 
       {error && <p className="error-message mt-4" role="alert">{error}</p>}
+      {participationError && access === 'active' && <p className="mt-4 text-xs leading-5 text-amber-100" role="status">{participationError}</p>}
       {loading
-        ? <p className="mt-6 text-sm text-braga-300" role="status">Loading comments…</p>
+        ? <p className="mt-5 text-sm text-braga-300" role="status">Loading comments…</p>
         : tree.length > 0
-          ? <ol className="mt-6 space-y-4">{tree.map((comment) => <CommentCard
+          ? <ol className="mt-4 space-y-0">{tree.map((comment) => <CommentCard
               key={comment.id}
               comment={comment}
               depth={1}
@@ -123,8 +150,9 @@ export default function PostComments({ ideaId }: { ideaId: string }) {
               onReply={setReplyingTo}
               onCreateReply={(parentId, body, postAnonymously) => create(parentId, body, postAnonymously)}
               onVote={vote}
+              allowAnonymousReplies={participation.allow_anonymous_replies}
             />)}</ol>
-          : <p className="mt-6 rounded-2xl border border-dashed border-white/15 p-5 text-sm text-braga-300">No comments yet. Start the conversation.</p>}
+          : <p className="mt-5 text-sm text-braga-300">No comments yet.</p>}
     </section>
   );
 }

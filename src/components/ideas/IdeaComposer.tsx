@@ -7,20 +7,30 @@ import { toUserMessage } from '@/lib/errors';
 import { useAuthUser } from '@/components/auth/useAuthUser';
 import { isAnonymousUser } from '@/lib/anonymous';
 import { clearIdeaDraft, loadIdeaDraft, requestIdeaSignIn, saveIdeaDraft } from '@/lib/ideaDraft';
+import {
+  getPostParticipationSettings,
+  lockedPostParticipationSettings,
+  type PostParticipationSettings
+} from '@/lib/postParticipation';
 import RipTaxonomyPicker from './RipTaxonomyPicker';
 import { communityConfig } from '@/config/community';
 
-type ComposerStage = 'form' | 'choice' | 'email' | 'sent';
+type ComposerStage = 'form' | 'email' | 'sent';
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function IdeaComposer() {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const previousSignedIn = useRef<boolean | null>(null);
   const { user, loading: authLoading } = useAuthUser();
   const signedIn = Boolean(user && !isAnonymousUser(user));
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [category, setCategory] = useState<RipCategory>('idea');
   const [tags, setTags] = useState<RipTag[]>([]);
+  const [postAnonymously, setPostAnonymously] = useState(true);
+  const [settings, setSettings] = useState<PostParticipationSettings>(lockedPostParticipationSettings);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsError, setSettingsError] = useState('');
   const [email, setEmail] = useState('');
   const [emailConsent, setEmailConsent] = useState(false);
   const [stage, setStage] = useState<ComposerStage>('form');
@@ -43,8 +53,33 @@ export default function IdeaComposer() {
     }
   }, []);
 
+  useEffect(() => {
+    if (authLoading || previousSignedIn.current === signedIn) return;
+    previousSignedIn.current = signedIn;
+    setPostAnonymously(!signedIn);
+  }, [authLoading, signedIn]);
+
+  useEffect(() => {
+    let current = true;
+    setSettingsLoading(true);
+    getPostParticipationSettings()
+      .then((next) => {
+        if (!current) return;
+        setSettings(next);
+        setSettingsError('');
+      })
+      .catch(() => {
+        if (!current) return;
+        setSettings(lockedPostParticipationSettings);
+        setSettingsError('Anonymous posting settings could not be loaded.');
+      })
+      .finally(() => { if (current) setSettingsLoading(false); });
+    return () => { current = false; };
+  }, []);
+
   function open() {
     setStage('form');
+    setPostAnonymously(!signedIn);
     if (status !== 'saved') setMessage('');
     setStatus('idle');
     dialogRef.current?.showModal();
@@ -61,25 +96,12 @@ export default function IdeaComposer() {
     if (cleanBody.length < 10 || cleanBody.length > 2000) throw new Error('Post details must be 10–2000 characters.');
   }
 
-  function reviewPost(event: FormSubmitEvent) {
-    event.preventDefault();
-    setMessage('');
-    try {
-      validateDraft();
-      setStatus('idle');
-      setStage('choice');
-    } catch (error) {
-      setStatus('error');
-      setMessage(toUserMessage('idea-create', error));
-    }
-  }
-
   async function post(mode: IdeaPostingMode) {
     setStatus('saving'); setMessage('');
     try {
       await createIdea({ title, body, category, tags, mode });
       clearIdeaDraft();
-      setTitle(''); setBody(''); setCategory('idea'); setTags([]);
+      setTitle(''); setBody(''); setCategory('idea'); setTags([]); setPostAnonymously(!signedIn);
       setStatus('saved');
       setMessage(mode === 'anonymous' ? 'Post shared anonymously.' : 'Post shared with your profile.');
       close();
@@ -88,6 +110,18 @@ export default function IdeaComposer() {
       setStatus('error');
       setMessage(toUserMessage('idea-create', error));
       setStage('form');
+    }
+  }
+
+  async function submitPost(event: FormSubmitEvent) {
+    event.preventDefault();
+    setMessage('');
+    try {
+      validateDraft();
+      await post(postAnonymously ? 'anonymous' : 'account');
+    } catch (error) {
+      setStatus('error');
+      setMessage(toUserMessage('idea-create', error));
     }
   }
 
@@ -114,6 +148,13 @@ export default function IdeaComposer() {
     } finally { setEmailBusy(false); }
   }
 
+  const anonymousPostsAllowed = settings.allow_anonymous_posts;
+  const signedOutPostsAllowed = settings.allow_signed_out_posts;
+  const postingAllowed = signedIn
+    ? !postAnonymously || anonymousPostsAllowed
+    : anonymousPostsAllowed && signedOutPostsAllowed;
+  const participationReady = !authLoading && !settingsLoading;
+
   return (
     <div>
       <button type="button" className="btn-primary inline-flex w-full items-center justify-center gap-2" onClick={open}>
@@ -134,7 +175,7 @@ export default function IdeaComposer() {
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-limewash">Community post</p>
               <h2 id="post-composer-title" className="mt-2 text-2xl font-black text-white">
-                {stage === 'form' ? 'Create a new post' : stage === 'choice' ? 'Choose how to publish' : stage === 'email' ? 'Existing member sign in' : 'Check your email'}
+                {stage === 'form' ? 'Create a new post' : stage === 'email' ? 'Existing member sign in' : 'Check your email'}
               </h2>
             </div>
             <button type="button" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-braga-300/25 text-braga-100 transition hover:border-limewash/70 hover:text-limewash" onClick={close} aria-label="Close post composer" disabled={status === 'saving' || emailBusy}>
@@ -143,28 +184,39 @@ export default function IdeaComposer() {
           </div>
 
           {stage === 'form' && (
-            <form onSubmit={reviewPost} className="mt-6 space-y-5" aria-busy={status === 'saving'}>
+            <form onSubmit={submitPost} className="mt-6 space-y-5" aria-busy={status === 'saving'}>
               <p className="text-sm leading-6 text-braga-200">Share an idea, resource, or perspective with the community.</p>
               <RipTaxonomyPicker category={category} tags={tags} onCategoryChange={setCategory} onTagsChange={setTags} />
               <div><label className="label" htmlFor="idea-title">Title</label><input id="idea-title" className="input mt-2" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="What should the community know or do?" minLength={4} maxLength={120} required autoFocus /></div>
               <div><label className="label" htmlFor="idea-body">Details</label><textarea id="idea-body" className="input mt-2 min-h-40" value={body} onChange={(event) => setBody(event.target.value)} placeholder="Add the useful context, link, idea, or perspective." minLength={10} maxLength={2000} required /></div>
-              <button type="submit" className="btn-primary w-full" disabled={status === 'saving' || authLoading}>Continue</button>
+
+              <div className="rounded-2xl border border-braga-300/20 bg-white/[0.025] p-4">
+                <label className={`flex min-h-11 items-center gap-3 text-sm font-semibold ${signedIn && anonymousPostsAllowed ? 'cursor-pointer text-white' : 'cursor-not-allowed text-braga-200'}`}>
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 shrink-0 accent-limewash"
+                    checked={signedIn ? postAnonymously : true}
+                    onChange={(event) => { if (signedIn) setPostAnonymously(event.target.checked); }}
+                    disabled={!signedIn || !anonymousPostsAllowed || settingsLoading}
+                  />
+                  Post anonymously
+                </label>
+                {!signedIn && participationReady && anonymousPostsAllowed && signedOutPostsAllowed && <p className="mt-2 text-xs leading-5 text-braga-300">
+                  Anonymous posting is required while signed out. <button type="button" className="font-bold text-limewash hover:underline" onClick={startSignInFlow}>Sign in</button> or <a className="font-bold text-limewash hover:underline" href={communityConfig.whatsappUrl} target="_blank" rel="noreferrer">create an account</a> with a member invitation to share this in your name.
+                </p>}
+                {!signedIn && participationReady && !signedOutPostsAllowed && <p className="mt-2 text-xs leading-5 text-amber-100">Posting while signed out is disabled. Sign in to share this post.</p>}
+                {!signedIn && participationReady && signedOutPostsAllowed && !anonymousPostsAllowed && <p className="mt-2 text-xs leading-5 text-amber-100">Anonymous posting is disabled. Sign in to share this post with your profile.</p>}
+                {signedIn && participationReady && !anonymousPostsAllowed && <p className="mt-2 text-xs leading-5 text-braga-300">Anonymous posting is disabled by the community organizers.</p>}
+                {settingsError && <p className="mt-2 text-xs leading-5 text-amber-100" role="status">{settingsError}</p>}
+              </div>
+
+              <button type="submit" className="btn-primary w-full" disabled={status === 'saving' || !participationReady || !postingAllowed}>
+                {status === 'saving' ? 'Posting…' : postAnonymously ? 'Post anonymously' : 'Post with my profile'}
+              </button>
+              {!signedIn && participationReady && !postingAllowed && <button type="button" className="btn-secondary w-full" onClick={startSignInFlow}>Already a member? Sign in</button>}
               {status === 'error' && message && <p className="error-message" role="alert">{message}</p>}
               {status !== 'error' && message && <p className="status-message" role="status">{message}</p>}
             </form>
-          )}
-
-          {stage === 'choice' && (
-            <div className="mt-6">
-              <p className="text-sm leading-6 text-braga-100">{signedIn ? 'Choose whether to attach your member profile.' : 'You can post now without an account. Existing members can sign in to attach their profile.'}</p>
-              <div className="mt-6 grid gap-3">
-                <button type="button" className="btn-primary" onClick={() => void post('anonymous')} disabled={status === 'saving'}>{status === 'saving' ? 'Posting…' : 'Post anonymously'}</button>
-                {signedIn
-                  ? <button type="button" className="btn-secondary" onClick={() => void post('account')} disabled={status === 'saving'}>Post with my profile</button>
-                  : <button type="button" className="btn-secondary" onClick={startSignInFlow}>Already a member? Sign in and attach my profile</button>}
-                <button type="button" className="px-4 py-2 text-sm text-braga-200 hover:text-white" onClick={() => setStage('form')} disabled={status === 'saving'}>Back</button>
-              </div>
-            </div>
           )}
 
           {stage === 'email' && (
@@ -176,7 +228,7 @@ export default function IdeaComposer() {
                 <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-limewash" checked={emailConsent} onChange={(event) => setEmailConsent(event.target.checked)} required disabled={emailBusy} />
                 <span>I agree to receive a one-time magic-link email sent through Supabase. My email address will never be used for marketing.</span>
               </label>
-              <div className="mt-6 grid gap-3"><button className="btn-primary" disabled={emailBusy || !emailConsent}>{emailBusy ? 'Sending…' : 'Email me the magic link'}</button><button type="button" className="px-4 py-2 text-sm text-braga-200 hover:text-white disabled:cursor-not-allowed disabled:opacity-50" onClick={() => setStage('choice')} disabled={emailBusy}>Back</button></div>
+              <div className="mt-6 grid gap-3"><button className="btn-primary" disabled={emailBusy || !emailConsent}>{emailBusy ? 'Sending…' : 'Email me the magic link'}</button><button type="button" className="px-4 py-2 text-sm text-braga-200 hover:text-white disabled:cursor-not-allowed disabled:opacity-50" onClick={() => setStage('form')} disabled={emailBusy}>Back</button></div>
               {message && <p className="error-message mt-4" role="alert">{message}</p>}
             </form>
           )}

@@ -110,7 +110,21 @@ export async function createIdea(input: CreateRipInput) {
   if (sessionError) throw sessionError;
   const user = sessionData.session?.user;
 
-  if (input.mode === 'anonymous') return createAnonymousIdea(rip.title, rip.body, slug, monthKey, rip.category, rip.tags);
+  if (input.mode === 'anonymous') {
+    if (user && !isAnonymousUser(user)) {
+      const { data, error } = await supabase.rpc('post_member_anonymous_idea', {
+        p_title: rip.title,
+        p_body: rip.body,
+        p_slug: slug,
+        p_month_key: monthKey,
+        p_category: rip.category,
+        p_tags: rip.tags
+      });
+      if (error) throw error;
+      return data;
+    }
+    return createAnonymousIdea(rip.title, rip.body, slug, monthKey, rip.category, rip.tags);
+  }
   if (!user || isAnonymousUser(user)) throw new Error('Create or sign in to an account before posting with your profile.');
 
   const { data, error } = await supabase

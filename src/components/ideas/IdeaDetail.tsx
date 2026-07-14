@@ -86,6 +86,13 @@ export default function IdeaDetail({ slug }: Props) {
     void load();
   }, [slug]);
 
+  useEffect(() => {
+    if (!idea || window.location.hash !== '#comments') return;
+    window.requestAnimationFrame(() => {
+      document.getElementById('comments')?.scrollIntoView({ block: 'start' });
+    });
+  }, [idea]);
+
   if (loading) return <p className="card p-6 text-braga-100" role="status">Loading post…</p>;
   if (error) return <p className="error-message" role="alert">{error}</p>;
   if (!idea) return <div className="card p-6"><h1 className="text-2xl font-semibold">Post not found</h1><a href="/posts" className="mt-4 inline-flex text-limewash">Back to posts</a></div>;

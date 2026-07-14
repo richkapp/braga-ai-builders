@@ -173,6 +173,29 @@ describe('delivery security contracts', () => {
     expect(publicList).not.toContain('upvote.user_id,');
   });
 
+  test('post participation settings are super-admin controlled and enforced server-side', async () => {
+    const migration = await read('supabase/migrations/033_post_participation_controls.sql');
+    for (const key of [
+      'allow_anonymous_posts',
+      'allow_signed_out_posts',
+      'allow_anonymous_comments',
+      'allow_anonymous_replies'
+    ]) expect(migration).toContain(key);
+    expect(migration).toContain('if not public.is_super_admin() then');
+    expect(migration).toContain("raise exception 'anonymous posts are disabled'");
+    expect(migration).toContain("raise exception 'logged-out posts are disabled'");
+    expect(migration).toContain("when target_parent_id is null then 'allow_anonymous_comments'");
+    expect(migration).toContain("else 'allow_anonymous_replies'");
+    expect(migration).toContain('on delete set null (parent_id)');
+    expect(migration).toContain('on delete set null;');
+    expect(migration).toContain('for share;');
+    expect(migration).toContain('grant execute on function public.get_post_participation_settings() to anon, authenticated');
+    expect(migration).toContain('grant execute on function public.super_admin_set_post_participation_setting(text, boolean) to authenticated');
+    expect(migration).toContain('create or replace function public.post_member_anonymous_idea(');
+    expect(migration).toContain('grant execute on function public.post_member_anonymous_idea(text, text, text, text, text, text[]) to authenticated');
+    expect(migration).toContain('if viewer_id is null or public.is_anonymous_user() then');
+  });
+
   test('invite delivery is reserved, delivered, claimed, or failed explicitly', async () => {
     const baseline = await read('supabase/migrations/006_delivery_readiness.sql');
     const rolling = await read('supabase/migrations/023_rolling_member_invites.sql');
