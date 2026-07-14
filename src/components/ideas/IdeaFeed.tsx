@@ -7,7 +7,7 @@ import { attachPublicAuthors, getMyPostRelationships, updateOwnIdea, type PostRe
 import { RIP_CATEGORIES, ripCategoryLabel, ripTagLabel } from '@/lib/rips';
 import { deleteIdea, getCurrentMemberRole, updateIdeaStatus, type MemberRole } from '@/lib/admin';
 import { isAnonymousUser } from '@/lib/anonymous';
-import { ideaMatchesMember, rankPostingMembers } from '@/lib/postMemberFilters';
+import { ideaMatchesMember, rankPostingMembers, scopeIdeasToPostView, type PostFeedView } from '@/lib/postMemberFilters';
 import type { Event, Idea, RipCategory, RipTag } from '@/lib/types';
 import AuthRequired from '@/components/auth/AuthRequired';
 import UpvoteButton from './UpvoteButton';
@@ -22,9 +22,8 @@ import { usePostTagCatalog } from './usePostTagCatalog';
 type VoteCountRow = { idea_id: string; upvote_count: number };
 type VoteRow = { idea_id: string };
 type CategoryFilter = RipCategory | 'all';
-type FeedView = 'all' | 'mine' | 'bookmarks';
 type Props = {
-  initialView?: FeedView;
+  initialView?: PostFeedView;
   showIntro?: boolean;
   showViewTabs?: boolean;
   showFilters?: boolean;
@@ -123,7 +122,7 @@ function IdeaEditor({ idea, onClose, onSaved }: { idea: Idea; onClose: () => voi
   );
 }
 
-const viewLabels: Record<FeedView, string> = {
+const viewLabels: Record<PostFeedView, string> = {
   all: 'All posts',
   mine: 'My posts',
   bookmarks: 'My bookmarks'
@@ -142,7 +141,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
   const [libraryAccess, setLibraryAccess] = useState<BookmarkAccess>('signed-out');
   const [nextEvent, setNextEvent] = useState<Event | null>(null);
   const [editing, setEditing] = useState<Idea | null>(null);
-  const [view, setView] = useState<FeedView>(initialView);
+  const [view, setView] = useState<PostFeedView>(initialView);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [selectedTags, setSelectedTags] = useState<RipTag[]>([]);
   const [selectedMemberHandle, setSelectedMemberHandle] = useState<string | null>(null);
@@ -219,7 +218,8 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     for (const idea of ideas) counts.set(idea.category, (counts.get(idea.category) ?? 0) + 1);
     return [...RIP_CATEGORIES].sort((left, right) => (counts.get(right.value) ?? 0) - (counts.get(left.value) ?? 0));
   }, [ideas]);
-  const memberOptions = useMemo(() => rankPostingMembers(ideas), [ideas]);
+  const viewScopedIdeas = useMemo(() => scopeIdeasToPostView(ideas, view), [ideas, view]);
+  const memberOptions = useMemo(() => rankPostingMembers(viewScopedIdeas), [viewScopedIdeas]);
 
   useEffect(() => {
     if (selectedMemberHandle && !memberOptions.some((member) => member.handle === selectedMemberHandle)) {
@@ -228,17 +228,15 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
   }, [memberOptions, selectedMemberHandle]);
 
   const filteredIdeas = useMemo(() => {
-    const matching = ideas.filter((idea) => {
-      if (view === 'mine' && !idea.viewer_is_author) return false;
-      if (view === 'bookmarks' && !idea.viewer_has_bookmarked) return false;
-      return (categoryFilter === 'all' || idea.category === categoryFilter)
-        && selectedTags.every((tag) => idea.tags.includes(tag))
-        && ideaMatchesMember(idea, selectedMemberHandle);
-    });
+    const matching = viewScopedIdeas.filter((idea) =>
+      (categoryFilter === 'all' || idea.category === categoryFilter)
+      && selectedTags.every((tag) => idea.tags.includes(tag))
+      && ideaMatchesMember(idea, selectedMemberHandle)
+    );
     return view === 'bookmarks'
       ? [...matching].sort((left, right) => Date.parse(right.viewer_bookmarked_at ?? '1970-01-01') - Date.parse(left.viewer_bookmarked_at ?? '1970-01-01'))
       : matching;
-  }, [ideas, view, categoryFilter, selectedTags, selectedMemberHandle]);
+  }, [viewScopedIdeas, view, categoryFilter, selectedTags, selectedMemberHandle]);
 
   async function markDone(idea: Idea) {
     setError('');
@@ -267,7 +265,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
       : [...current, tag]);
   }
 
-  function chooseView(nextView: FeedView) {
+  function chooseView(nextView: PostFeedView) {
     setView(nextView);
     setCategoryFilter('all');
     setSelectedTags([]);
@@ -301,7 +299,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
         <p className="mt-1 text-xs leading-5 text-braga-300">Narrow the feed without losing your place.</p>
       </div>
       {showViewTabs && libraryAccess === 'active' && <nav className="grid gap-2" aria-label="Post library views">
-        {(Object.keys(viewLabels) as FeedView[]).map((item) => <button key={item} type="button" className={`${filterPill} text-left ${view === item ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={view === item} onClick={() => chooseView(item)}>{viewLabels[item]}</button>)}
+        {(Object.keys(viewLabels) as PostFeedView[]).map((item) => <button key={item} type="button" className={`${filterPill} text-left ${view === item ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={view === item} onClick={() => chooseView(item)}>{viewLabels[item]}</button>)}
       </nav>}
       {showFilters && <>
         <div>
