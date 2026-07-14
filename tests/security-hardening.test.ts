@@ -175,6 +175,7 @@ describe('delivery security contracts', () => {
 
   test('post participation settings are super-admin controlled and enforced server-side', async () => {
     const migration = await read('supabase/migrations/033_post_participation_controls.sql');
+    const reviewFix = await read('supabase/migrations/034_post_participation_review_fixes.sql');
     for (const key of [
       'allow_anonymous_posts',
       'allow_signed_out_posts',
@@ -194,6 +195,11 @@ describe('delivery security contracts', () => {
     expect(migration).toContain('create or replace function public.post_member_anonymous_idea(');
     expect(migration).toContain('grant execute on function public.post_member_anonymous_idea(text, text, text, text, text, text[]) to authenticated');
     expect(migration).toContain('if viewer_id is null or public.is_anonymous_user() then');
+    expect(reviewFix).toContain("and profile.role = 'super_admin'");
+    expect(reviewFix).toContain('and profile.suspended_at is null');
+    expect(reviewFix).toContain('for share;');
+    expect(reviewFix).toContain('comment.author_id is not null and profile.id is null');
+    expect(reviewFix).toContain("raise exception 'Super-admin access required'");
   });
 
   test('invite delivery is reserved, delivered, claimed, or failed explicitly', async () => {

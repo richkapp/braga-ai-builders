@@ -179,7 +179,9 @@ describe('launch frontend contracts', () => {
     const profile = await read('src/components/profile/ProfileForm.tsx');
     expect(composer).not.toContain('AuthRequired');
     expect(composer).toContain('Post anonymously');
-    expect(composer).toContain('checked={signedIn ? postAnonymously : true}');
+    expect(composer).toContain('checked={effectivePostAnonymously}');
+    expect(composer).toContain('anonymousChoice?.accountUserId === accountUserId');
+    expect(composer).not.toContain('previousSignedIn');
     expect(composer).toContain('disabled={!signedIn || !anonymousPostsAllowed || settingsLoading}');
     expect(composer).toContain('create an account');
     expect(composer).toContain('Post with my profile');
@@ -222,12 +224,16 @@ describe('launch frontend contracts', () => {
     expect(feed).toContain('href={`/posts/${idea.slug}#comments`}');
     expect(detail).toContain("window.location.hash !== '#comments'");
     expect(detail).toContain("document.getElementById('comments')?.scrollIntoView");
+    expect(detail).toContain('}, [idea?.id]);');
     expect(feed).toContain('idea.comment_count ?? 0');
     expect(comments).toContain('buildPostCommentTree(comments)');
     expect(controls).toContain('comment.replies.map((reply) => <CommentCard');
     expect(controls).toContain('onCreateReply(comment.id, body, postAnonymously)');
     expect(controls).toContain('Post anon?');
+    expect(controls).toContain("depth <= 3 ? 'pl-2 sm:ml-5 sm:pl-4'");
     expect(comments).toContain('Leave a Comment');
+    expect(comments).toContain('composerTriggerRef.current?.focus()');
+    expect(comments).toContain('ref={composerTriggerRef}');
     expect(comments).not.toContain('Sort by');
     expect(controls).not.toContain('Award');
     expect(controls).not.toContain('Share');

@@ -91,7 +91,7 @@ export default function IdeaDetail({ slug }: Props) {
     window.requestAnimationFrame(() => {
       document.getElementById('comments')?.scrollIntoView({ block: 'start' });
     });
-  }, [idea]);
+  }, [idea?.id]);
 
   if (loading) return <p className="card p-6 text-braga-100" role="status">Loading post…</p>;
   if (error) return <p className="error-message" role="alert">{error}</p>;

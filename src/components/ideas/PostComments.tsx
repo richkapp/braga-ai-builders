@@ -32,6 +32,7 @@ export default function PostComments({ ideaId }: { ideaId: string }) {
   const loadSequence = useRef(0);
   const accessSequence = useRef(0);
   const voteSequence = useRef(0);
+  const composerTriggerRef = useRef<HTMLButtonElement>(null);
 
   const load = useCallback(async (withLoading = true) => {
     const sequence = ++loadSequence.current;
@@ -92,10 +93,15 @@ export default function PostComments({ ideaId }: { ideaId: string }) {
 
   const tree = useMemo(() => buildPostCommentTree(comments), [comments]);
 
+  function closeTopLevelComposer() {
+    setComposerOpen(false);
+    window.requestAnimationFrame(() => composerTriggerRef.current?.focus());
+  }
+
   async function create(parentId: string | null, body: string, postAnonymously: boolean) {
     await createIdeaComment({ ideaId, parentId, body, postAnonymously });
     setReplyingTo(null);
-    if (parentId === null) setComposerOpen(false);
+    if (parentId === null) closeTopLevelComposer();
     await load(false);
   }
 
@@ -126,10 +132,10 @@ export default function PostComments({ ideaId }: { ideaId: string }) {
               label="Leave a Comment"
               anonymousKind="comment"
               allowAnonymous={participation.allow_anonymous_comments}
-              onCancel={() => setComposerOpen(false)}
+              onCancel={closeTopLevelComposer}
               onSubmit={(body, postAnonymously) => create(null, body, postAnonymously)}
             />
-          : <button type="button" className="min-h-11 w-full rounded-full border border-braga-300/35 px-4 text-left text-sm text-braga-300 transition hover:border-braga-200 hover:text-white" onClick={() => setComposerOpen(true)}>Leave a Comment</button>)}
+          : <button ref={composerTriggerRef} type="button" className="min-h-11 w-full rounded-full border border-braga-300/35 px-4 text-left text-sm text-braga-300 transition hover:border-braga-200 hover:text-white" onClick={() => setComposerOpen(true)}>Leave a Comment</button>)}
         {access === 'signed-out' && <a className="flex min-h-11 w-full items-center rounded-full border border-braga-300/35 px-4 text-sm text-braga-300 transition hover:border-braga-200 hover:text-white" href="/signin">Leave a Comment <span className="ml-2 text-xs text-braga-300">— sign in required</span></a>}
         {access === 'inactive' && <button type="button" className="min-h-11 w-full cursor-not-allowed rounded-full border border-braga-300/20 px-4 text-left text-sm text-braga-300" disabled>Commenting is unavailable for this account</button>}
         {access === 'loading' && <p className="text-sm text-braga-300" role="status">Checking comment access…</p>}

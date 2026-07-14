@@ -166,7 +166,7 @@ export function CommentCard({ comment, depth, access, replyingTo, votingId, onRe
       </div>}
 
       {comment.replies.length > 0 && <ol
-        className={`space-y-0 ${depth <= 5 ? 'ml-4 border-l border-braga-300/25 pl-3 sm:ml-5 sm:pl-4' : ''}`}
+        className={`space-y-0 border-l border-braga-300/25 ${depth <= 3 ? 'pl-2 sm:ml-5 sm:pl-4' : 'pl-0 sm:ml-0 sm:pl-0'}`}
       >
         {comment.replies.map((reply) => <CommentCard
           key={reply.id}
