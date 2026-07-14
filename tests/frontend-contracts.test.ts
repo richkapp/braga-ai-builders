@@ -124,6 +124,7 @@ describe('launch frontend contracts', () => {
     expect(composer).toContain('RipTaxonomyPicker');
     expect(draft).toContain('braga-idea-draft-v1');
     expect(draft).toContain("context: 'signin'");
+    expect(draft).toContain("next: '/ideas'");
     expect(callback).toContain("'/posts?restoreIdea=1'");
     expect(votes).not.toContain('No account needed');
     expect(feed).toContain('Already a member? Sign in with a magic link');

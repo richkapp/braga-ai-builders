@@ -1,7 +1,7 @@
 import { supabaseAnonKey, supabaseUrl } from './supabase';
 
 export type MagicLinkPayload = (
-  | { context: 'signin'; next?: '/ideas' | '/posts'; code?: never }
+  | { context: 'signin'; next?: '/ideas'; code?: never }
   | { code: string; context?: never; next?: never }
 ) & {
   email: string;

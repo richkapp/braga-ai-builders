@@ -2,7 +2,7 @@ type InviteRequest = {
   email?: string;
   code?: string;
   context?: 'signin';
-  next?: '/ideas' | '/posts';
+  next?: '/ideas';
   emailConsent?: boolean;
 };
 
@@ -192,8 +192,8 @@ Deno.serve(async (request) => {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Enter a valid email address.' }, 400, cors);
 
   const deliveryRedirect = new URL(redirectTo);
-  if (payload.next === '/ideas' || payload.next === '/posts') {
-    deliveryRedirect.searchParams.set('next', payload.next);
+  if (payload.next === '/ideas') {
+    deliveryRedirect.searchParams.set('next', '/ideas');
   }
 
   if (payload.context === 'signin') {
