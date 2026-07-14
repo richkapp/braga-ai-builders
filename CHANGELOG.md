@@ -7,6 +7,7 @@ Posts:
 - Renamed the public post route from `/ideas` to `/posts`, with permanent compatibility redirects for existing links and post detail URLs.
 - Moved post creation into an accessible modal launched from the left sidebar, and moved post library, category, and tag filters into that sidebar.
 - Reworked feed cards around the poster's avatar, name, and publication date, with clearly distinct member and anonymous fallback artwork.
+- Tightened post-card hierarchy so compact author metadata and tags sit above and below the more prominent title at the same supporting text size.
 - Renamed the signed-in Settings navigation label and page heading to Dashboard.
 - Kept post creation available through feed refreshes and read failures, and prevented magic-link requests from racing backward navigation in the composer.
 

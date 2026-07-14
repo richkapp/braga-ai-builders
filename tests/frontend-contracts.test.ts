@@ -61,6 +61,7 @@ describe('launch frontend contracts', () => {
     const detailPage = await read('src/pages/posts/[slug].astro');
     const legacyDetailPage = await read('src/pages/ideas/[slug].astro');
     const feed = await read('src/components/ideas/IdeaFeed.tsx');
+    const authorIdentity = await read('src/components/ideas/PostAuthorIdentity.tsx');
     const composer = await read('src/components/ideas/IdeaComposer.tsx');
     const authStatus = await read('src/components/auth/AuthStatus.tsx');
     const settings = await read('src/pages/settings.astro');
@@ -77,6 +78,10 @@ describe('launch frontend contracts', () => {
     expect(feed).toContain("layout === 'sidebar' && (loading || error)");
     expect(feed).toContain('PostAuthorIdentity');
     expect(feed.indexOf('PostAuthorIdentity profile={idea.profiles}')).toBeLessThan(feed.indexOf('href={`/posts/${idea.slug}`}'));
+    expect(authorIdentity).toContain('h-8 w-8 rounded-full');
+    expect(authorIdentity).toContain('items-center gap-2 text-xs');
+    expect(feed).toContain('className="text-xl font-bold text-white hover:text-limewash"');
+    expect(feed).toContain("const tagClass = 'rounded-full border border-violet-300/25 bg-violet-500/10 px-2.5 py-1 text-xs");
     expect(feed).not.toContain('Your posts are tied to your member profile.');
     expect(composer).toContain('Create a new post');
     expect(composer).toContain('aria-labelledby="post-composer-title"');
