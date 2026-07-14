@@ -143,6 +143,36 @@ describe('delivery security contracts', () => {
     expect(ballotSubmit.indexOf('for share;')).toBeLessThan(ballotSubmit.indexOf('for update;'));
   });
 
+  test('post comments keep identities private and mutations member-only', async () => {
+    const migration = await read('supabase/migrations/032_post_comments.sql');
+    const publicList = migration.slice(
+      migration.indexOf('create or replace function public.list_idea_comments('),
+      migration.indexOf('create or replace function public.create_idea_comment(')
+    );
+    expect(migration).toContain('create table public.idea_comments');
+    expect(migration).toContain('create table public.idea_comment_upvotes');
+    expect(migration).toContain('foreign key (parent_id, idea_id)');
+    expect(migration).toContain('references public.idea_comments(id, idea_id)');
+    expect(migration).toContain('alter table public.idea_comments enable row level security');
+    expect(migration).toContain('alter table public.idea_comment_upvotes enable row level security');
+    expect(migration).toContain('revoke all on table public.idea_comments from public, anon, authenticated');
+    expect(migration).toContain('revoke all on table public.idea_comment_upvotes from public, anon, authenticated');
+    expect(migration).toContain('grant all privileges on table public.idea_comments to service_role');
+    expect(migration).toContain('grant all privileges on table public.idea_comment_upvotes to service_role');
+    expect(migration.match(/not public\.is_active_member\(\)/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(migration.match(/for share;/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(migration).toContain('for share of comment, idea;');
+    expect(migration).toContain("raise exception 'reply target is not part of this post'");
+    expect(migration).toContain("'idea-comment-upvote:' || viewer_id::text");
+    expect(migration).toContain('grant execute on function public.list_idea_comments(uuid) to anon, authenticated');
+    expect(migration).toContain('grant execute on function public.create_idea_comment(uuid, uuid, text, boolean) to authenticated');
+    expect(migration).toContain('grant execute on function public.toggle_idea_comment_upvote(uuid) to authenticated');
+    expect(publicList).toContain('profile.is_public = true');
+    expect(publicList).toContain('(comment.is_anonymous or profile.id is null) as is_anonymous');
+    expect(publicList).not.toContain('comment.author_id,');
+    expect(publicList).not.toContain('upvote.user_id,');
+  });
+
   test('invite delivery is reserved, delivered, claimed, or failed explicitly', async () => {
     const baseline = await read('supabase/migrations/006_delivery_readiness.sql');
     const rolling = await read('supabase/migrations/023_rolling_member_invites.sql');

@@ -9,7 +9,7 @@ const schema = readdirSync('supabase/migrations')
   .join('\n');
 
 test('core community tables are defined', () => {
-  for (const table of ['profiles', 'invites', 'invite_redemptions', 'ideas', 'idea_votes', 'idea_bookmarks', 'post_tags', 'events', 'event_registrations', 'bug_reports', 'community_votes', 'community_vote_options', 'community_vote_ballots', 'community_feature_flags']) {
+  for (const table of ['profiles', 'invites', 'invite_redemptions', 'ideas', 'idea_votes', 'idea_bookmarks', 'idea_comments', 'idea_comment_upvotes', 'post_tags', 'events', 'event_registrations', 'bug_reports', 'community_votes', 'community_vote_options', 'community_vote_ballots', 'community_feature_flags']) {
     expect(schema).toContain(`create table public.${table}`);
   }
 });
@@ -19,7 +19,7 @@ test('one upvote per member per idea is enforced', () => {
 });
 
 test('RLS is enabled on user-owned tables', () => {
-  for (const table of ['profiles', 'ideas', 'idea_votes', 'idea_bookmarks', 'post_tags', 'events', 'event_registrations', 'bug_reports', 'community_votes', 'community_vote_options', 'community_vote_ballots', 'community_feature_flags']) {
+  for (const table of ['profiles', 'ideas', 'idea_votes', 'idea_bookmarks', 'idea_comments', 'idea_comment_upvotes', 'post_tags', 'events', 'event_registrations', 'bug_reports', 'community_votes', 'community_vote_options', 'community_vote_ballots', 'community_feature_flags']) {
     expect(schema).toContain(`alter table public.${table} enable row level security;`);
   }
 });
@@ -31,6 +31,12 @@ test('Data API grants are explicit because auto expose is disabled', () => {
   expect(schema).toContain('grant usage on schema public to service_role;');
   expect(schema).toContain('grant all privileges on all tables in schema public to service_role;');
   expect(schema).toContain('grant all privileges on table public.community_feature_flags to service_role;');
+  expect(schema).toContain('grant all privileges on table public.idea_comments to service_role;');
+  expect(schema).toContain('grant all privileges on table public.idea_comment_upvotes to service_role;');
+});
+
+test('one comment upvote per member is enforced', () => {
+  expect(schema).toContain('primary key (comment_id, user_id)');
 });
 
 test('service-role-only tables are admin protected by policy', () => {

@@ -192,6 +192,29 @@ describe('launch frontend contracts', () => {
     expect(profile).toContain('isAnonymousUser');
   });
 
+  test('comments load only on post detail, support nested replies, and expose counts in the feed', async () => {
+    const feed = await read('src/components/ideas/IdeaFeed.tsx');
+    const detail = await read('src/components/ideas/IdeaDetail.tsx');
+    const comments = await read('src/components/ideas/PostComments.tsx');
+    const controls = await read('src/components/ideas/PostCommentControls.tsx');
+    const commentLib = await read('src/lib/postComments.ts');
+    expect(detail).toContain('<PostComments ideaId={idea.id} />');
+    expect(feed).not.toContain('listIdeaComments(');
+    expect(feed).toContain('listIdeaCommentCounts(ids)');
+    expect(feed).toContain('href={`/posts/${idea.slug}#comments`}');
+    expect(feed).toContain('idea.comment_count ?? 0');
+    expect(comments).toContain('buildPostCommentTree(comments)');
+    expect(controls).toContain('comment.replies.map((reply) => <CommentCard');
+    expect(controls).toContain('onCreateReply(comment.id, body, postAnonymously)');
+    expect(controls).toContain('Comment anonymously');
+    expect(comments).toContain("access === 'active'");
+    expect(comments).toContain('Sign in to comment');
+    expect(comments).toContain('toggleIdeaCommentUpvote');
+    expect(commentLib).toContain("rpc('list_idea_comments'");
+    expect(commentLib).toContain("rpc('create_idea_comment'");
+    expect(commentLib).toContain("rpc('toggle_idea_comment_upvote'");
+  });
+
   test('post tags are popularity-ranked, expandable, multi-filterable, and member-creatable', async () => {
     const picker = await read('src/components/ideas/RipTaxonomyPicker.tsx');
     const feed = await read('src/components/ideas/IdeaFeed.tsx');

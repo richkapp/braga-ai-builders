@@ -59,6 +59,18 @@ export type Idea = {
   profiles?: PublicProfile | null;
   upvote_count?: number;
   viewer_has_voted?: boolean;
+  comment_count?: number;
+};
+
+export type PostComment = {
+  id: string;
+  parent_id: string | null;
+  body: string;
+  created_at: string;
+  is_anonymous: boolean;
+  profiles: PublicProfile | null;
+  upvote_count: number;
+  viewer_has_upvoted: boolean;
 };
 
 export type Event = {

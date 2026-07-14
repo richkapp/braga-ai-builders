@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuCheck, LuChevronDown, LuInfo, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { LuCheck, LuChevronDown, LuInfo, LuMessageCircle, LuPencil, LuTrash2 } from 'react-icons/lu';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { supabase } from '@/lib/supabase';
 import { toUserMessage } from '@/lib/errors';
@@ -8,6 +8,7 @@ import { RIP_CATEGORIES, ripCategoryLabel, ripTagLabel } from '@/lib/rips';
 import { deleteIdea, getCurrentMemberRole, updateIdeaStatus, type MemberRole } from '@/lib/admin';
 import { isAnonymousUser } from '@/lib/anonymous';
 import { ideaMatchesMember, rankPostingMembers, scopeIdeasToPostView, type PostFeedView } from '@/lib/postMemberFilters';
+import { listIdeaCommentCounts } from '@/lib/postComments';
 import type { Event, Idea, RipCategory, RipTag } from '@/lib/types';
 import AuthRequired from '@/components/auth/AuthRequired';
 import UpvoteButton from './UpvoteButton';
@@ -49,7 +50,10 @@ async function listVisibleIdeas(ids?: string[]) {
 async function hydrateIdeas(rows: Idea[], viewerId: string | null, relationships: PostRelationship[]) {
   const ids = rows.map((idea) => idea.id);
   if (ids.length === 0) return rows;
-  const { data: counts, error: countError } = await supabase.from('idea_vote_counts').select('idea_id, upvote_count').in('idea_id', ids);
+  const [{ data: counts, error: countError }, commentCounts] = await Promise.all([
+    supabase.from('idea_vote_counts').select('idea_id, upvote_count').in('idea_id', ids),
+    listIdeaCommentCounts(ids)
+  ]);
   if (countError) throw countError;
   let voted = new Set<string>();
   if (viewerId) {
@@ -58,12 +62,14 @@ async function hydrateIdeas(rows: Idea[], viewerId: string | null, relationships
     voted = new Set(((votes ?? []) as VoteRow[]).map((vote) => vote.idea_id));
   }
   const countById = new Map(((counts ?? []) as VoteCountRow[]).map((row) => [row.idea_id, row.upvote_count]));
+  const commentCountById = new Map(commentCounts.map((row) => [row.idea_id, row.comment_count]));
   const relationshipById = new Map(relationships.map((row) => [row.idea_id, row]));
   return rows.map((idea) => {
     const relationship = relationshipById.get(idea.id);
     return {
       ...idea,
       upvote_count: countById.get(idea.id) ?? 0,
+      comment_count: commentCountById.get(idea.id) ?? 0,
       viewer_has_voted: voted.has(idea.id),
       viewer_is_author: relationship?.viewer_is_author ?? false,
       viewer_has_bookmarked: relationship?.viewer_has_bookmarked ?? false,
@@ -348,7 +354,17 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
           <p className="line-clamp-4 text-sm leading-6 text-braga-100">{idea.body}</p>
         </div>
         <footer className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-          <UpvoteButton ideaId={idea.id} initialCount={idea.upvote_count ?? 0} initialVoted={idea.viewer_has_voted ?? false} disabled={idea.status === 'closed'} />
+          <div className="flex flex-wrap items-center gap-3">
+            <UpvoteButton ideaId={idea.id} initialCount={idea.upvote_count ?? 0} initialVoted={idea.viewer_has_voted ?? false} disabled={idea.status === 'closed'} />
+            <a
+              href={`/posts/${idea.slug}#comments`}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-braga-300/30 px-3 text-sm font-semibold text-braga-100 transition hover:border-violet-300/60 hover:text-violet-100 focus:outline-none focus:ring-2 focus:ring-violet-300/60"
+              aria-label={`Open ${idea.comment_count ?? 0} ${(idea.comment_count ?? 0) === 1 ? 'comment' : 'comments'} on ${idea.title}`}
+            >
+              <LuMessageCircle className="h-4 w-4" aria-hidden="true" />
+              {idea.comment_count ?? 0}
+            </a>
+          </div>
         </footer>
       </article>;
     })}
