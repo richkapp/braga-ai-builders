@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { fetchMyProfile, updateMyProfile } from '@/lib/profile';
+import { mergeSavedProfileWithAvatar } from '@/lib/profileDraft';
 import { toUserMessage } from '@/lib/errors';
 import type { EditableProfile, EditableProfileRecord } from '@/lib/types';
 import type { AvatarState } from '@/lib/avatar';
@@ -31,6 +32,7 @@ export default function ProfileForm() {
   const userIsAnonymous = isAnonymousUser(user);
   const profileIdentity = userId && !userIsAnonymous ? userId : null;
   const identityGenerationRef = useRef(0);
+  const avatarRevisionRef = useRef(0);
   const [profile, setProfile] = useState<Partial<EditableProfileRecord>>(emptyProfile);
   const [profileOwnerId, setProfileOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +44,7 @@ export default function ProfileForm() {
     let active = true;
     const generation = identityGenerationRef.current + 1;
     identityGenerationRef.current = generation;
+    avatarRevisionRef.current = 0;
     const isCurrentIdentity = () => active && identityGenerationRef.current === generation;
     if (authLoading) return;
     if (!profileIdentity) {
@@ -88,6 +91,7 @@ export default function ProfileForm() {
 
   function applyAvatar(identity: string, generation: number, avatar: AvatarState) {
     if (identity !== profileIdentity || generation !== identityGenerationRef.current) return;
+    avatarRevisionRef.current += 1;
     setProfile((current) => ({
       ...current,
       avatar_path: avatar.avatar_path,
@@ -101,6 +105,7 @@ export default function ProfileForm() {
     const submittingIdentity = profileOwnerId;
     if (!submittingIdentity || submittingIdentity !== profileIdentity) return;
     const submittingGeneration = identityGenerationRef.current;
+    const submittingAvatarRevision = avatarRevisionRef.current;
     const isCurrentIdentity = () => identityGenerationRef.current === submittingGeneration;
 
     setSaving(true);
@@ -118,7 +123,11 @@ export default function ProfileForm() {
         is_public: Boolean(profile.is_public)
       });
       if (!isCurrentIdentity() || saved.id !== submittingIdentity) return;
-      setProfile(saved);
+      setProfile((current) => mergeSavedProfileWithAvatar(
+        saved,
+        current,
+        avatarRevisionRef.current !== submittingAvatarRevision
+      ));
       setMessage('Profile saved.');
     } catch (caught) {
       if (isCurrentIdentity()) setError(toUserMessage('profile-save', caught));
