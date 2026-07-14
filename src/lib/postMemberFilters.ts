@@ -6,6 +6,14 @@ export type PostMemberFilterOption = {
   postCount: number;
 };
 
+export type PostFeedView = 'all' | 'mine' | 'bookmarks';
+
+export function scopeIdeasToPostView(ideas: Idea[], view: PostFeedView) {
+  if (view === 'mine') return ideas.filter((idea) => idea.viewer_is_author);
+  if (view === 'bookmarks') return ideas.filter((idea) => idea.viewer_has_bookmarked);
+  return ideas;
+}
+
 export function rankPostingMembers(ideas: Idea[]): PostMemberFilterOption[] {
   const members = new Map<string, PostMemberFilterOption>();
 

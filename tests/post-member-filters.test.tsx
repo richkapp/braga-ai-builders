@@ -2,7 +2,7 @@ import { afterAll, afterEach, describe, expect, test } from 'bun:test';
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import React from 'react';
 import type { Idea, PublicProfile } from '@/lib/types';
-import { ideaMatchesMember, rankPostingMembers, type PostMemberFilterOption } from '@/lib/postMemberFilters';
+import { ideaMatchesMember, rankPostingMembers, scopeIdeasToPostView, type PostMemberFilterOption } from '@/lib/postMemberFilters';
 
 GlobalRegistrator.register();
 const { cleanup, fireEvent, render } = await import('@testing-library/react');
@@ -26,7 +26,7 @@ function profile(handle: string, displayName: string): PublicProfile {
   };
 }
 
-function idea(id: string, author: PublicProfile | null): Idea {
+function idea(id: string, author: PublicProfile | null, overrides: Partial<Idea> = {}): Idea {
   return {
     id,
     slug: id,
@@ -38,7 +38,8 @@ function idea(id: string, author: PublicProfile | null): Idea {
     status: 'open',
     created_at: '2026-07-14T00:00:00.000Z',
     updated_at: '2026-07-14T00:00:00.000Z',
-    profiles: author
+    profiles: author,
+    ...overrides
   };
 }
 
@@ -73,6 +74,22 @@ describe('post member filter ranking', () => {
       idea('2', profile('ana', 'Ana'))
     ]);
     expect(ranked.map((member) => member.handle)).toEqual(['ana', 'zoe']);
+  });
+  test('scopes ranking choices to the active post-library view', () => {
+    const ada = profile('ada', 'Ada');
+    const zara = profile('zara', 'Zara');
+    const rows = [
+      idea('1', zara, { viewer_has_bookmarked: true }),
+      idea('2', ada, { viewer_is_author: true }),
+      idea('3', zara),
+      idea('4', ada, { viewer_is_author: true, viewer_has_bookmarked: true })
+    ];
+
+    expect(rankPostingMembers(scopeIdeasToPostView(rows, 'mine')).map((member) => [member.handle, member.postCount]))
+      .toEqual([['ada', 2]]);
+    expect(rankPostingMembers(scopeIdeasToPostView(rows, 'bookmarks')).map((member) => member.handle))
+      .toEqual(['ada', 'zara']);
+    expect(scopeIdeasToPostView(rows, 'all')).toHaveLength(4);
   });
 });
 

@@ -93,7 +93,8 @@ describe('launch frontend contracts', () => {
     const feed = await read('src/components/ideas/IdeaFeed.tsx');
     const memberFilters = await read('src/components/ideas/PostMemberFilters.tsx');
     const ranking = await read('src/lib/postMemberFilters.ts');
-    expect(feed).toContain('rankPostingMembers(ideas)');
+    expect(feed).toContain('scopeIdeasToPostView(ideas, view)');
+    expect(feed).toContain('rankPostingMembers(viewScopedIdeas)');
     expect(feed).toContain('ideaMatchesMember(idea, selectedMemberHandle)');
     expect(feed).toContain('<PostMemberFilters');
     expect(memberFilters).toContain('collapsedMemberLimit = 6');
@@ -377,7 +378,7 @@ describe('launch frontend contracts', () => {
     expect(hub).toContain("aria-current={activeTab === key ? 'page' : undefined}");
     expect(hub).toContain('window.history.pushState');
     expect(hub).toContain('IdeaFeed');
-    expect(feed).toContain("type FeedView = 'all' | 'mine' | 'bookmarks'");
+    expect(feed).toContain('useState<PostFeedView>(initialView)');
     expect(feed).toContain('My posts');
     expect(feed).toContain('My bookmarks');
     expect(feed).toContain('viewer_is_author');
