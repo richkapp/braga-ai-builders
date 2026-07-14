@@ -9,6 +9,8 @@ type PublicAuthor = {
   handle: string | null;
   display_name: string;
   avatar_url: string | null;
+  avatar_path: string | null;
+  avatar_updated_at: string | null;
   bio: string;
   website_url: string | null;
   linkedin_url: string | null;
@@ -60,7 +62,7 @@ export async function attachPublicAuthors(ideas: Idea[]): Promise<Idea[]> {
 
   const { data, error } = await supabase
     .from('idea_public_authors')
-    .select('idea_id, handle, display_name, avatar_url, bio, website_url, linkedin_url, github_url, x_url')
+    .select('idea_id, handle, display_name, avatar_url, avatar_path, avatar_updated_at, bio, website_url, linkedin_url, github_url, x_url')
     .in('idea_id', ideaIds);
   if (error) throw error;
 
@@ -74,6 +76,8 @@ export async function attachPublicAuthors(ideas: Idea[]): Promise<Idea[]> {
             handle: author.handle,
             display_name: author.display_name,
             avatar_url: author.avatar_url,
+            avatar_path: author.avatar_path,
+            avatar_updated_at: author.avatar_updated_at,
             bio: author.bio,
             website_url: author.website_url,
             linkedin_url: author.linkedin_url,

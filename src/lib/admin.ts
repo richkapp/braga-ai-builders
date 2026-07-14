@@ -48,6 +48,8 @@ export type AdminMember = {
   display_name: string;
   bio: string;
   avatar_url: string | null;
+  avatar_path: string | null;
+  avatar_updated_at: string | null;
   website_url: string | null;
   linkedin_url: string | null;
   github_url: string | null;
@@ -89,7 +91,11 @@ export async function setMemberSuspension(id: string, suspended: boolean) {
   return (data || null) as string | null;
 }
 
-export async function deleteMember(id: string) {
+export async function deleteMember(id: string, avatarPath: string | null) {
+  if (avatarPath) {
+    const { error: avatarError } = await supabase.storage.from('avatars').remove([avatarPath]);
+    if (avatarError) throw avatarError;
+  }
   const { data, error } = await supabase.rpc('super_admin_delete_member', { target_user_id: id });
   if (error) throw error;
   if (data !== true) throw new Error('Member deletion was not confirmed.');

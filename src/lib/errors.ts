@@ -43,6 +43,8 @@ export function toUserMessage(context: string, error: unknown): string {
     'member-profile': 'This member profile could not be loaded.',
     'profile-load': 'Your profile could not be loaded. Please refresh and try again.',
     'profile-save': 'Your profile could not be saved. Check the fields and try again.',
+    'avatar-upload': 'Your photo could not be uploaded. Check the image and try again.',
+    'avatar-remove': 'Your photo could not be removed. Please try again.',
     'invite-load': 'Your invitation links could not be loaded. Refresh and try again.',
     'admin-access': 'Admin access could not be checked. Please refresh and try again.',
     'admin-load': 'Organizer data could not be loaded. Please refresh and try again.',

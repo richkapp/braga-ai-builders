@@ -13,6 +13,7 @@
 ## RLS and API expectations
 
 - Active members are permanent, non-anonymous accounts that can update only their own profile and posts; suspended accounts and temporary anonymous identities are blocked from direct community mutations at the database boundary.
+- Native avatars are public WebP assets capped at 512 KB in Storage. Active members reserve one opaque path through a security-definer RPC, and Storage RLS permits metadata reads, uploads, replacements, and deletion only for that caller's reserved path. Super admins may read/delete avatar metadata only to clean up a member before account deletion; the deletion RPC refuses to orphan a remaining public object. Direct `avatar_path` and legacy `avatar_url` mutation is not granted.
 - Visitors can create anonymous posts and upvotes only through the origin-checked Edge Function.
 - Public post reads expose only a safe per-viewer edit capability; underlying author and anonymous visitor IDs remain private.
 - Member bookmarks are private account state exposed only through narrow relationship and idempotent desired-state RPCs; clients have no direct bookmark-table privileges.

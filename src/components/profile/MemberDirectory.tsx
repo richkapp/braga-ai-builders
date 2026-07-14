@@ -18,7 +18,7 @@ export default function MemberDirectory() {
       try {
         const { data, error: queryError } = await supabase
           .from('public_profiles')
-          .select('handle, display_name, bio, avatar_url, website_url, linkedin_url, github_url, x_url')
+          .select('handle, display_name, bio, avatar_url, avatar_path, avatar_updated_at, website_url, linkedin_url, github_url, x_url')
           .order('display_name');
         if (queryError) throw queryError;
         setProfiles((data as PublicProfile[] | null) ?? []);

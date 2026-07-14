@@ -4,6 +4,7 @@ export type Profile = {
   display_name: string;
   bio: string;
   avatar_url: string | null;
+  avatar_path: string | null;
   website_url: string | null;
   linkedin_url: string | null;
   github_url: string | null;
@@ -16,15 +17,15 @@ export type Profile = {
 
 export type PublicProfile = Pick<
   Profile,
-  'handle' | 'display_name' | 'bio' | 'avatar_url' | 'website_url' | 'linkedin_url' | 'github_url' | 'x_url'
->;
+  'handle' | 'display_name' | 'bio' | 'avatar_url' | 'avatar_path' | 'website_url' | 'linkedin_url' | 'github_url' | 'x_url'
+> & { avatar_updated_at: string | null };
 
 export type EditableProfile = Pick<
   Profile,
-  'handle' | 'display_name' | 'bio' | 'avatar_url' | 'website_url' | 'linkedin_url' | 'github_url' | 'x_url' | 'is_public'
+  'handle' | 'display_name' | 'bio' | 'avatar_url' | 'avatar_path' | 'website_url' | 'linkedin_url' | 'github_url' | 'x_url' | 'is_public'
 >;
 
-export type EditableProfileRecord = EditableProfile & Pick<Profile, 'id'>;
+export type EditableProfileRecord = EditableProfile & Pick<Profile, 'id' | 'updated_at'>;
 
 export type RipCategory = 'idea' | 'resource' | 'perspective';
 export type RipTag = string;
