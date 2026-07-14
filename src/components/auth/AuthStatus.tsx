@@ -40,7 +40,7 @@ export default function AuthStatus() {
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
       {admin && <a className="nav-link" href="/admin">Admin</a>}
-      <a className="nav-link" href="/settings">Settings</a>
+      <a className="nav-link" href="/settings">Dashboard</a>
       <button
         className="rounded-full border border-white/20 px-4 py-2 font-semibold text-white transition hover:border-limewash hover:text-limewash"
         type="button"

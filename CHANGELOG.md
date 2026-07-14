@@ -2,7 +2,16 @@
 
 ## Unreleased
 
+Posts:
+
+- Renamed the public post route from `/ideas` to `/posts`, with permanent compatibility redirects for existing links and post detail URLs.
+- Moved post creation into an accessible modal launched from the left sidebar, and moved post library, category, and tag filters into that sidebar.
+- Reworked feed cards around the poster's avatar, name, and publication date, with clearly distinct member and anonymous fallback artwork.
+- Renamed the signed-in Settings navigation label and page heading to Dashboard.
+
 Community voting:
+
+- Added an organizer-only **Create a new poll** action to the public Voting page.
 
 - Added a public Voting tab with live counts, percentages, turnout, publicly named ballots, and a closed-vote archive.
 - Let active signed-in members cast one choice, change it until closure, and opt into anonymous display without weakening one-member-one-ballot enforcement.

@@ -184,7 +184,7 @@ Use `bun install --frozen-lockfile` and `bun run build`. Connect the public GitH
 Check these after every release:
 
 - `/` returns `200` and the WhatsApp/GitHub links are correct.
-- `/ideas` loads posts and author profile links.
+- `/posts` loads posts and author profile links; `/ideas` redirects to it.
 - `/events` loads published events and external RSVP links.
 - `/members` exposes only opted-in public profiles.
 - The footer bug-report dialog accepts a detailed report without requiring name or email, and configured notification delivery reaches the organizer inbox.
