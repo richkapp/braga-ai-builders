@@ -1,15 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import VotingBoard from '../components/voting/VotingBoard';
-import { communityConfig, communityPageTitle } from '../config/community';
+import { communityPageTitle } from '../config/community';
 ---
 <BaseLayout title={communityPageTitle('Voting')}>
-  <section class="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-    <p class="text-xs font-black uppercase tracking-[0.2em] text-limewash">Community decisions</p>
-    <h1 class="mt-3 text-4xl font-black text-white">Voting</h1>
-    <p class="mt-4 max-w-3xl text-braga-100">See what the {communityConfig.name} community is deciding, follow live results, and sign in to cast your vote.</p>
-    <div class="mt-8">
-      <VotingBoard client:load />
-    </div>
-  </section>
+  <VotingBoard client:load />
 </BaseLayout>
