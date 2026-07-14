@@ -53,6 +53,10 @@ export function calculateVotePercentage(ballotCount: number, totalBallots: numbe
   return Math.round((ballotCount / totalBallots) * 100);
 }
 
+export function canManageCommunityVotes(user: { is_anonymous?: boolean } | null | undefined, role: 'member' | 'admin' | 'super_admin' | null) {
+  return Boolean(user && !user.is_anonymous && (role === 'admin' || role === 'super_admin'));
+}
+
 export async function listCommunityVotes() {
   const { data, error } = await supabase.rpc('list_public_community_votes');
   if (error) throw error;

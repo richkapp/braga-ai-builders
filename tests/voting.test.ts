@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { calculateVotePercentage, normalizeCommunityVoteInput } from '@/lib/voting';
+import { calculateVotePercentage, canManageCommunityVotes, normalizeCommunityVoteInput } from '@/lib/voting';
 
 const validInput = {
   title: 'Choose the next build night topic',
@@ -50,5 +50,15 @@ describe('community vote percentages', () => {
     expect(calculateVotePercentage(1, 3)).toBe(33);
     expect(calculateVotePercentage(2, 3)).toBe(67);
     expect(calculateVotePercentage(3, 3)).toBe(100);
+  });
+});
+
+describe('community vote management authorization', () => {
+  test('allows only signed-in admins and super admins to create polls', () => {
+    expect(canManageCommunityVotes(null, null)).toBe(false);
+    expect(canManageCommunityVotes({ is_anonymous: true }, 'admin')).toBe(false);
+    expect(canManageCommunityVotes({}, 'member')).toBe(false);
+    expect(canManageCommunityVotes({}, 'admin')).toBe(true);
+    expect(canManageCommunityVotes({}, 'super_admin')).toBe(true);
   });
 });

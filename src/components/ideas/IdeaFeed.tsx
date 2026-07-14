@@ -148,9 +148,10 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
   const [error, setError] = useState('');
   const loadSequence = useRef(0);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (withLoading = true) => {
     const sequence = ++loadSequence.current;
-    setLoading(true); setError('');
+    if (withLoading) setLoading(true);
+    setError('');
     try {
       const eventRequest = showIntro
         ? supabase.from('events').select('*').in('status', ['published', 'completed']).gte('starts_at', new Date().toISOString()).order('starts_at', { ascending: true }).limit(1).maybeSingle()
@@ -199,7 +200,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
 
   useEffect(() => {
     void load();
-    const refresh = () => void load();
+    const refresh = () => void load(false);
     window.addEventListener('braga:ideas-changed', refresh);
     return () => {
       loadSequence.current += 1;
@@ -229,14 +230,14 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
 
   async function markDone(idea: Idea) {
     setError('');
-    try { await updateIdeaStatus(idea.id, 'closed'); await load(); }
+    try { await updateIdeaStatus(idea.id, 'closed'); await load(false); }
     catch (caught) { setError(toUserMessage('admin-save', caught)); }
   }
 
   async function remove(idea: Idea) {
     if (!window.confirm(`Delete “${idea.title}”? This cannot be undone.`)) return;
     setError('');
-    try { await deleteIdea(idea.id); await load(); }
+    try { await deleteIdea(idea.id); await load(false); }
     catch (caught) { setError(toUserMessage('admin-save', caught)); }
   }
 
@@ -261,6 +262,12 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     setFiltersExpanded(false);
   }
 
+  if (layout === 'sidebar' && (loading || error)) {
+    return <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start" aria-label="Post controls"><IdeaComposer /></aside>
+      <div className="min-w-0">{loading ? <p className="card p-6 text-braga-100" role="status">Loading posts…</p> : <p className="error-message" role="alert">{error}</p>}</div>
+    </div>;
+  }
   if (loading) return <p className="card p-6 text-braga-100" role="status">Loading posts…</p>;
   if (error) return <p className="error-message" role="alert">{error}</p>;
   if (initialView !== 'all' && libraryAccess === 'signed-out') return <AuthRequired title={initialView === 'mine' ? 'Your posts' : 'Your bookmarks'} message="Sign in with your member account to see your personal post library." />;
@@ -328,7 +335,7 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
     })}
     {ideas.length === 0 && <p className="card p-6 text-braga-100">No posts yet. Be the first to add one.</p>}
     {ideas.length > 0 && filteredIdeas.length === 0 && <p className="card p-6 text-braga-100">{view === 'mine' ? 'You have not published any posts with your member profile yet.' : view === 'bookmarks' ? 'You have not bookmarked any posts yet.' : 'No posts match those filters.'}</p>}
-    {editing && <IdeaEditor idea={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(); }} />}
+    {editing && <IdeaEditor idea={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(false); }} />}
   </div>;
 
   if (layout === 'sidebar') {
