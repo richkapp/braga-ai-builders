@@ -316,7 +316,7 @@ describe('launch frontend contracts', () => {
     expect(uploader).toContain('accept="image/jpeg,image/png,image/webp"');
     expect(avatar).toContain('AVATAR_OUTPUT_SIZE = 384');
     expect(avatar).toContain("contentType: 'image/webp'");
-    expect(avatar).toContain("cacheControl: '31536000'");
+    expect(avatar).toContain("cacheControl: '3600'");
   });
 
   test('member deletion cleans up a native avatar before removing the account', async () => {

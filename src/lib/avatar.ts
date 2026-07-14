@@ -140,7 +140,7 @@ export async function uploadMyAvatar(expectedUserId: string, file: File) {
 
   await verifyCurrentIdentity(expectedUserId);
   const { error: uploadError } = await supabase.storage.from(AVATAR_BUCKET).upload(reservedPath, compressed, {
-    cacheControl: '31536000',
+    cacheControl: '3600',
     contentType: 'image/webp',
     upsert: true
   });
