@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+Branding:
+
+- Replaced the navigation initials tile with the supplied Braga AI Builders circular badge.
+- Rebuilt the browser favicon as a brain-only circuit mark with separate light- and dark-browser variants.
+
 Profile settings:
 
 - Replaced editable external avatar URLs with native profile-photo uploads that validate 2 MB JPEG/PNG/WebP sources, center-crop them to 384 px WebP, and keep compressed objects under 256 KB.

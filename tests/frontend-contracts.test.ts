@@ -129,10 +129,20 @@ describe('launch frontend contracts', () => {
     expect(preview).toContain("record['@type'] === 'Event'");
   });
 
-  test('favicon and branded not-found page exist', async () => {
+  test('header logo and adaptive brain favicons exist', async () => {
+    await access(new URL('public/images/braga-ai-builders-logo.webp', root));
     await access(new URL('public/favicon.svg', root));
+    await access(new URL('public/favicon-light.svg', root));
+    await access(new URL('public/favicon-dark.svg', root));
     await access(new URL('src/pages/404.astro', root));
-    expect(await read('src/layouts/BaseLayout.astro')).toContain('rel="icon"');
+    const layout = await read('src/layouts/BaseLayout.astro');
+    const nav = await read('src/components/Nav.astro');
+    const favicon = await read('public/favicon.svg');
+    expect(layout).toContain('media="(prefers-color-scheme: light)"');
+    expect(layout).toContain('media="(prefers-color-scheme: dark)"');
+    expect(nav).toContain('/images/braga-ai-builders-logo.webp');
+    expect(nav).not.toContain('bg-limewash font-extrabold');
+    expect(favicon).not.toContain('<text');
   });
 
   test('landing and members routes expose only the requested community CTAs', async () => {
