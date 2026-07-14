@@ -4,7 +4,7 @@
 
 Branding:
 
-- Replaced the navigation initials tile with the supplied Braga AI Builders circular badge.
+- Replaced the illegible circular navigation badge with the same text-free circuit-brain mark used by the favicon.
 - Rebuilt the browser favicon as a brain-only circuit mark with separate light- and dark-browser variants.
 
 Profile settings:
