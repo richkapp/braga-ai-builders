@@ -4,6 +4,9 @@
 
 Profile settings:
 
+- Replaced editable external avatar URLs with native profile-photo uploads that validate 2 MB JPEG/PNG/WebP sources, center-crop them to 384 px WebP, and keep compressed objects under 256 KB.
+- Added immediate photo preview, replacement, removal, broken-image fallbacks, and cache-busted avatar rendering across member, post-author, and organizer surfaces.
+- Bound one opaque Storage object to each active member through narrow RPCs and Storage RLS, without exposing Auth user IDs in public asset paths.
 - Kept unsaved profile edits intact when Supabase refreshes the same member's authentication session after switching browser tabs.
 - Bound profile loads and saves to the account that initiated them so delayed responses or account switches cannot overwrite another member's profile state.
 

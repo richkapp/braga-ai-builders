@@ -48,6 +48,8 @@ export type AdminMember = {
   display_name: string;
   bio: string;
   avatar_url: string | null;
+  avatar_path: string | null;
+  avatar_updated_at: string | null;
   website_url: string | null;
   linkedin_url: string | null;
   github_url: string | null;

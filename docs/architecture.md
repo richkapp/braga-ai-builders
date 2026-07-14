@@ -4,7 +4,7 @@ Braga AI Builders uses a server-rendered Astro app with React islands for intera
 
 ## Data model
 
-- `profiles`: member profile data keyed to `auth.users`; public reads are opt-in and field-limited, while role and suspension state remain private.
+- `profiles`: member profile data keyed to `auth.users`; public reads are opt-in and field-limited, while role and suspension state remain private. Native avatars use one opaque `avatar_path` per profile and a public, size-limited Supabase Storage bucket.
 - `invites`: system bootstrap links, rolling member-owned single-use URLs, and 1–50-use admin campaign URLs.
 - `invite_redemptions`: private delivery, pending-confirmation, capacity, and confirmed-member audit records.
 - `ideas`: public posts; stable anonymous visitor identifiers are never granted through the public Data API.
@@ -28,3 +28,5 @@ Every active member, including admins, gets five current single-use URLs through
 ## Public data boundary
 
 Public pages may read published events, non-hidden posts, aggregate upvote counts, the public-safe popularity-ranked tag catalog, and opted-in profile fields. The Data API excludes private emails, invite data, bookmark rows, tag-creator IDs, stable anonymous visitor IDs, attendee counts, and admin-only member fields. RLS and explicit grants both enforce these boundaries.
+
+Avatar object URLs contain random UUID paths rather than Auth user IDs. Only opted-in public profile and post-author views expose those paths; legacy external avatar URLs remain read-only until members replace or remove them.

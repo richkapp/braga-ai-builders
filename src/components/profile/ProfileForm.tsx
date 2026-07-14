@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormSubmitEvent } from '@/lib/dom';
 import { fetchMyProfile, updateMyProfile } from '@/lib/profile';
 import { toUserMessage } from '@/lib/errors';
-import type { EditableProfile } from '@/lib/types';
+import type { EditableProfile, EditableProfileRecord } from '@/lib/types';
+import type { AvatarState } from '@/lib/avatar';
 import { communityConfig } from '@/config/community';
 import AuthRequired from '@/components/auth/AuthRequired';
 import { useAuthUser } from '@/components/auth/useAuthUser';
 import { isAnonymousUser } from '@/lib/anonymous';
 import { FaGithub, FaLinkedinIn, FaXTwitter } from 'react-icons/fa6';
 import { LuEye, LuGlobe } from 'react-icons/lu';
+import AvatarUploader from './AvatarUploader';
 
-const emptyProfile: Partial<EditableProfile> = {
+const emptyProfile: Partial<EditableProfileRecord> = {
   handle: '',
   display_name: '',
   bio: '',
@@ -19,6 +21,7 @@ const emptyProfile: Partial<EditableProfile> = {
   github_url: '',
   x_url: '',
   avatar_url: '',
+  avatar_path: null,
   is_public: false
 };
 
@@ -28,7 +31,7 @@ export default function ProfileForm() {
   const userIsAnonymous = isAnonymousUser(user);
   const profileIdentity = userId && !userIsAnonymous ? userId : null;
   const identityGenerationRef = useRef(0);
-  const [profile, setProfile] = useState<Partial<EditableProfile>>(emptyProfile);
+  const [profile, setProfile] = useState<Partial<EditableProfileRecord>>(emptyProfile);
   const [profileOwnerId, setProfileOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,6 +86,16 @@ export default function ProfileForm() {
     setProfile((current) => ({ ...current, [key]: value }));
   }
 
+  function applyAvatar(identity: string, generation: number, avatar: AvatarState) {
+    if (identity !== profileIdentity || generation !== identityGenerationRef.current) return;
+    setProfile((current) => ({
+      ...current,
+      avatar_path: avatar.avatar_path,
+      avatar_url: avatar.avatar_url,
+      updated_at: avatar.avatar_updated_at ?? current.updated_at
+    }));
+  }
+
   async function submit(event: FormSubmitEvent) {
     event.preventDefault();
     const submittingIdentity = profileOwnerId;
@@ -102,7 +115,6 @@ export default function ProfileForm() {
         linkedin_url: profile.linkedin_url || null,
         github_url: profile.github_url || null,
         x_url: profile.x_url || null,
-        avatar_url: profile.avatar_url || null,
         is_public: Boolean(profile.is_public)
       });
       if (!isCurrentIdentity() || saved.id !== submittingIdentity) return;
@@ -130,6 +142,17 @@ export default function ProfileForm() {
           <span className="mt-1 block text-sm leading-6 text-violet-100/80">Turn this on so other {communityConfig.name} members can find your profile and social links.</span>
         </span>
       </label>
+      <AvatarUploader
+        expectedUserId={profileIdentity}
+        identityGeneration={identityGenerationRef.current}
+        profile={{
+          display_name: profile.display_name || 'New builder',
+          avatar_url: profile.avatar_url,
+          avatar_path: profile.avatar_path,
+          updated_at: profile.updated_at
+        }}
+        onAvatarChange={applyAvatar}
+      />
       <div className="grid gap-5 md:grid-cols-2">
         <div>
           <label className="label" htmlFor="display_name">Display name</label>
@@ -161,10 +184,6 @@ export default function ProfileForm() {
         <div>
           <label className="label flex items-center gap-2" htmlFor="x_url"><FaXTwitter aria-hidden="true" /> X URL</label>
           <input id="x_url" type="url" className="input mt-2" value={profile.x_url ?? ''} onChange={(event) => setField('x_url', event.target.value)} placeholder="https://x.com/…" />
-        </div>
-        <div className="md:col-span-2">
-          <label className="label" htmlFor="avatar_url">Avatar image URL</label>
-          <input id="avatar_url" type="url" className="input mt-2" value={profile.avatar_url ?? ''} onChange={(event) => setField('avatar_url', event.target.value)} placeholder="https://…" />
         </div>
       </div>
       <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</button>

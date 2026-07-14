@@ -46,6 +46,28 @@ describe('delivery security contracts', () => {
     expect(sql).toContain("status = 'open'");
   });
 
+  test('native avatars are size-limited, owner-bound, and public only through opted-in profiles', async () => {
+    const migration = await read('supabase/migrations/028_native_profile_avatars.sql');
+    expect(migration).toContain("values ('avatars', 'avatars', true, 524288, array['image/webp'])");
+    expect(migration).toContain("avatar_path ~ '^[0-9a-f]{8}");
+    expect(migration).toContain('create or replace function public.reserve_my_avatar_path()');
+    expect(migration).toContain('create or replace function public.confirm_my_avatar_upload(p_path text)');
+    expect(migration).toContain('create or replace function public.clear_my_avatar_path(p_path text)');
+    expect(migration.match(/public\.is_active_member\(\)/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(migration).toContain('from storage.objects');
+    expect(migration).toContain('objects.owner_id = auth.uid()::text');
+    expect(migration).toContain("bucket_id = 'avatars'");
+    expect(migration).toContain('select profiles.avatar_path');
+    expect(migration).toContain('where profiles.id = auth.uid()');
+    expect(migration).toContain('Delete the avatar object before clearing the profile');
+    expect(migration).toContain('where is_public = true');
+    expect(migration).toContain('profiles.is_public = true');
+    expect(migration).toContain('revoke all on function public.reserve_my_avatar_path() from public, anon');
+    expect(migration).toContain('grant execute on function public.clear_my_avatar_path(text) to authenticated');
+    expect(migration).toContain('revoke update (avatar_url) on table public.profiles from authenticated');
+    expect(migration).not.toContain('grant update (avatar_path)');
+  });
+
   test('invite delivery is reserved, delivered, claimed, or failed explicitly', async () => {
     const baseline = await read('supabase/migrations/006_delivery_readiness.sql');
     const rolling = await read('supabase/migrations/023_rolling_member_invites.sql');

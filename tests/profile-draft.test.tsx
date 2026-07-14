@@ -19,11 +19,13 @@ function profile(id: string, displayName: string): EditableProfileRecord {
     display_name: displayName,
     bio: '',
     avatar_url: null,
+    avatar_path: null,
     website_url: null,
     linkedin_url: null,
     github_url: null,
     x_url: null,
-    is_public: false
+    is_public: false,
+    updated_at: '2026-07-14T00:00:00.000Z'
   };
 }
 

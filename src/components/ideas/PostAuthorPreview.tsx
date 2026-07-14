@@ -3,13 +3,13 @@ import { FaGithub, FaLinkedinIn, FaXTwitter } from 'react-icons/fa6';
 import { LuGlobe } from 'react-icons/lu';
 import type { PublicProfile } from '@/lib/types';
 import { isHttpUrl } from '@/lib/profile';
+import AvatarImage from '@/components/profile/AvatarImage';
 
 type SocialLink = { label: string; href: string; Icon: IconType };
 
 export default function PostAuthorPreview({ profile }: { profile: PublicProfile | null | undefined }) {
   if (!profile?.handle) return <span>Builder</span>;
 
-  const initials = profile.display_name.slice(0, 2).toUpperCase();
   const profileHref = `/members/${profile.handle}`;
   const links = [
     { label: 'Website', href: profile.website_url, Icon: LuGlobe },
@@ -26,11 +26,7 @@ export default function PostAuthorPreview({ profile }: { profile: PublicProfile 
       <span className="pointer-events-none invisible absolute bottom-full left-0 z-50 hidden w-72 pb-3 opacity-0 transition duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100 sm:block">
         <span className="block rounded-2xl border border-braga-300/25 bg-ink-900 p-4 text-left shadow-2xl shadow-black/40">
           <span className="flex items-center gap-3">
-            {profile.avatar_url && isHttpUrl(profile.avatar_url) ? (
-              <img src={profile.avatar_url} alt="" className="h-12 w-12 rounded-xl object-cover" loading="lazy" />
-            ) : (
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-limewash font-black text-ink-950" aria-hidden="true">{initials}</span>
-            )}
+            <AvatarImage profile={profile} imageClassName="h-12 w-12 shrink-0 rounded-xl object-cover" fallbackClassName="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-limewash font-black text-ink-950" />
             <span className="min-w-0">
               <a href={profileHref} className="block truncate text-base font-bold text-white hover:text-limewash">{profile.display_name}</a>
               <span className="block truncate text-xs text-limewash">@{profile.handle}</span>

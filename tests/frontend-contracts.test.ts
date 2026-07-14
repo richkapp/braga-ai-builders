@@ -303,6 +303,22 @@ describe('launch frontend contracts', () => {
     expect(form.indexOf('Show my profile in the member directory')).toBeLessThan(form.indexOf('Display name'));
   });
 
+  test('profile photos use the native upload flow instead of editable external URLs', async () => {
+    const form = await read('src/components/profile/ProfileForm.tsx');
+    const uploader = await read('src/components/profile/AvatarUploader.tsx');
+    const avatar = await read('src/lib/avatar.ts');
+    expect(form).toContain('AvatarUploader');
+    expect(form).not.toContain('Avatar image URL');
+    expect(form).not.toContain('id="avatar_url"');
+    expect(uploader).toContain('Maximum 2 MB');
+    expect(uploader).toContain('Replace photo');
+    expect(uploader).toContain('Remove');
+    expect(uploader).toContain('accept="image/jpeg,image/png,image/webp"');
+    expect(avatar).toContain('AVATAR_OUTPUT_SIZE = 384');
+    expect(avatar).toContain("contentType: 'image/webp'");
+    expect(avatar).toContain("cacheControl: '31536000'");
+  });
+
   test('organizer routes cover the complete v1 operations', async () => {
     for (const path of [
       'src/components/admin/InviteManager.tsx',
