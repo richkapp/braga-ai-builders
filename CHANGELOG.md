@@ -15,6 +15,7 @@ Posts:
 - Added super-admin database-backed switches for anonymous posts, signed-out posts, anonymous comments, and anonymous replies.
 - Preserved replies when an author or parent comment is removed, made feed comment counts fail soft, and restored reliable `#comments` navigation after async detail loading.
 - Hardened participation after review: attribution now stays correct through auth transitions, `#comments` scrolls only once, deep mobile threads retain readable width, cancelled composers restore keyboard focus, suspended super admins cannot race a setting change, and deleted members remain distinct from anonymous posters.
+- Added native post sharing with clipboard fallback beside the feed comment count and the detail-page bookmark action.
 - Renamed the signed-in Settings navigation label and page heading to Dashboard.
 - Kept post creation available through feed refreshes and read failures, and prevented magic-link requests from racing backward navigation in the composer.
 
@@ -33,6 +34,11 @@ Branding:
 
 - Replaced the illegible circular navigation badge with the supplied colorful brain-and-network artwork on a transparent background.
 - Rebuilt the browser favicon as a brain-only circuit mark with separate light- and dark-browser variants.
+
+Privacy and support:
+
+- Added GDPR-aware Privacy Policy and Terms and Conditions pages grounded in the site's actual Supabase, Vercel, browser-storage, anonymous-participation, invitation, and support-report data flows.
+- Reworked the global footer into navigation and legal/support rows, with Terms, Privacy, and Report a Bug grouped beneath the primary community links.
 
 Profile settings:
 

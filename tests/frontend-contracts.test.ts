@@ -544,4 +544,40 @@ describe('launch frontend contracts', () => {
     expect(adminLib).toContain("rpc('revoke_admin_invite'");
     expect(adminLib).toContain("rpc('list_member_invites_for_admin'");
   });
+
+  test('posts expose native sharing and the global footer carries legal and support links', async () => {
+    const feed = await read('src/components/ideas/IdeaFeed.tsx');
+    const detail = await read('src/components/ideas/IdeaDetail.tsx');
+    const share = await read('src/components/ideas/SharePostButton.tsx');
+    const sharing = await read('src/lib/postSharing.ts');
+    const footer = await read('src/components/Footer.astro');
+    const authForm = await read('src/components/auth/InviteEmailForm.tsx');
+    const bugReport = await read('src/components/bug-reports/BugReportDialog.tsx');
+    const terms = await read('src/pages/terms.astro');
+    const privacy = await read('src/pages/privacy.astro');
+
+    expect(feed).not.toContain('Narrow the feed without losing your place.');
+    expect(feed).toContain('<SharePostButton slug={idea.slug} title={idea.title} />');
+    expect(detail).toContain('<SharePostButton slug={idea.slug} title={idea.title} />');
+    expect(share).toContain("import { LuForward } from 'react-icons/lu'");
+    expect(share).toContain("import { sharePost } from '@/lib/postSharing'");
+    expect(share).toContain('aria-label={`Share ${title}`}');
+    expect(sharing).toContain('if (client.share)');
+    expect(sharing).toContain('client.clipboard.writeText');
+    expect(sharing).toContain("caught.name === 'AbortError'");
+    expect(footer).toContain('id="site-support"');
+    expect(footer).toContain('href="/terms"');
+    expect(footer).toContain('href="/privacy"');
+    expect(footer.indexOf('aria-label="Footer navigation"')).toBeLessThan(footer.indexOf('aria-label="Legal and support"'));
+    expect(footer.indexOf('href="/privacy"')).toBeLessThan(footer.indexOf('<BugReportDialog'));
+    expect(authForm).toContain('href="/terms"');
+    expect(authForm).toContain('href="/privacy"');
+    expect(bugReport).toContain('href="/privacy"');
+    expect(terms).toContain('Terms and Conditions');
+    expect(terms).toContain('href="/privacy"');
+    expect(privacy).toContain('General Data Protection Regulation');
+    expect(privacy).toContain('Comissão Nacional de Proteção de Dados');
+    expect(privacy).toContain('What you have to provide');
+    expect(privacy).toContain('ordinarily within one month');
+  });
 });
