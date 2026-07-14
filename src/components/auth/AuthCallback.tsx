@@ -38,7 +38,8 @@ export default function AuthCallback() {
         const hash = new URLSearchParams(url.hash.replace(/^#/, ''));
         const accessToken = hash.get('access_token');
         const refreshToken = hash.get('refresh_token');
-        const returnToIdeas = url.searchParams.get('next') === '/ideas';
+        const next = url.searchParams.get('next');
+        const returnToPosts = next === '/posts' || next === '/ideas';
 
         if (accessToken && refreshToken) {
           const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
@@ -67,7 +68,7 @@ export default function AuthCallback() {
           console.error('[invite-claim-backup]', claimError);
         }
 
-        window.location.replace(returnToIdeas ? '/ideas?restoreIdea=1' : '/settings');
+        window.location.replace(returnToPosts ? '/posts?restoreIdea=1' : '/settings');
       } catch (caught) {
         window.history.replaceState({}, document.title, '/auth/confirm');
         setFailed(true);

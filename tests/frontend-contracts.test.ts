@@ -10,11 +10,12 @@ describe('launch frontend contracts', () => {
     const detail = await read('src/components/ideas/IdeaDetail.tsx');
     const ideaLib = await read('src/lib/ideas.ts');
     const authorPreview = await read('src/components/ideas/PostAuthorPreview.tsx');
+    const authorIdentity = await read('src/components/ideas/PostAuthorIdentity.tsx');
     expect(feed).toContain('attachPublicAuthors');
     expect(detail).toContain('attachPublicAuthors');
     expect(ideaLib).toContain(".from('idea_public_authors')");
     expect(ideaLib).toContain('linkedin_url');
-    expect(feed).toContain('PostAuthorPreview');
+    expect(feed).toContain('PostAuthorIdentity');
     expect(detail).toContain('PostAuthorPreview');
     expect(authorPreview).toContain('`/members/${profile.handle}`');
     expect(authorPreview).toContain('group-hover:visible');
@@ -24,6 +25,10 @@ describe('launch frontend contracts', () => {
     expect(authorPreview).toContain('FaGithub');
     expect(authorPreview).toContain('FaXTwitter');
     expect(authorPreview).toContain('LuGlobe');
+    expect(authorIdentity).toContain('LuGhost');
+    expect(authorIdentity).toContain('LuUserRound');
+    expect(authorIdentity).toContain('resolveAvatarUrl');
+    expect(authorIdentity).toContain('createdAt');
     expect(feed).not.toContain('profiles!ideas_author_id_fkey');
     const admin = await read('src/lib/admin.ts');
     expect(admin).toContain('attachPublicAuthors');
@@ -41,13 +46,34 @@ describe('launch frontend contracts', () => {
     const nav = await read('src/components/Nav.astro');
     expect(nav).toContain('mobile-menu');
     expect(nav).toContain('AuthStatus client:load');
-    expect(nav).toContain('href="/ideas"');
+    expect(nav).toContain('href="/posts"');
     expect(nav).toContain('href="/events"');
     expect(nav).toContain('href="/voting"');
     expect(nav).toContain('href="/members"');
     expect(nav.match(/>Posts<\/a>/g)).toHaveLength(2);
     expect(nav.match(/>Voting<\/a>/g)).toHaveLength(2);
     expect(nav).not.toContain('>Ideas</a>');
+  });
+
+  test('posts use the canonical route, sidebar controls, modal composer, and author-first cards', async () => {
+    const page = await read('src/pages/posts.astro');
+    const legacyPage = await read('src/pages/ideas.astro');
+    const feed = await read('src/components/ideas/IdeaFeed.tsx');
+    const composer = await read('src/components/ideas/IdeaComposer.tsx');
+    const authStatus = await read('src/components/auth/AuthStatus.tsx');
+    const settings = await read('src/pages/settings.astro');
+    expect(page).toContain('IdeaFeed layout="sidebar"');
+    expect(legacyPage).toContain("Astro.redirect(`/posts${Astro.url.search}`");
+    expect(feed).toContain('<IdeaComposer />');
+    expect(feed).toContain('aria-label="Post controls"');
+    expect(feed).toContain('aria-label="Filter posts"');
+    expect(feed).toContain('PostAuthorIdentity');
+    expect(feed.indexOf('PostAuthorIdentity profile={idea.profiles}')).toBeLessThan(feed.indexOf('href={`/posts/${idea.slug}`}'));
+    expect(feed).not.toContain('Your posts are tied to your member profile.');
+    expect(composer).toContain('Create a new post');
+    expect(composer).toContain('aria-labelledby="post-composer-title"');
+    expect(authStatus).toContain('>Dashboard</a>');
+    expect(settings).toContain("communityPageTitle('Dashboard')");
   });
 
   test('community voting exposes public live results and organizer-only management', async () => {
@@ -63,6 +89,8 @@ describe('launch frontend contracts', () => {
     expect(board).toContain('When unchecked, your member name appears publicly');
     expect(board).toContain('Sign in with your member account');
     expect(board).toContain('Update my vote');
+    expect(board).toContain('Create a new poll');
+    expect(board).toContain('getCurrentMemberRole');
     expect(board).toContain('const refresh = useCallback(() => load(false)');
     expect(client).toContain("rpc('list_public_community_votes'");
     expect(client).toContain("rpc('submit_community_ballot'");
@@ -88,13 +116,15 @@ describe('launch frontend contracts', () => {
     expect(composer).toContain('Post anonymously');
     expect(composer).toContain('Already a member? Sign in and attach my profile');
     expect(composer).toContain('Post with my profile');
-    expect(composer).toContain('Add a post');
+    expect(composer).toContain('Create a new post');
+    expect(composer).toContain('showModal()');
+    expect(composer).toContain('<dialog');
     expect(composer).toContain('Share an idea, resource, or perspective with the community.');
     expect(composer).not.toContain('Add a RIP');
     expect(composer).toContain('RipTaxonomyPicker');
     expect(draft).toContain('braga-idea-draft-v1');
     expect(draft).toContain("context: 'signin'");
-    expect(callback).toContain("'/ideas?restoreIdea=1'");
+    expect(callback).toContain("'/posts?restoreIdea=1'");
     expect(votes).not.toContain('No account needed');
     expect(feed).toContain('Already a member? Sign in with a magic link');
     expect(feed).toContain('Next event:');

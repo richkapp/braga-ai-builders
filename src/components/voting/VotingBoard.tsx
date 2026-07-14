@@ -3,6 +3,9 @@ import type { FormSubmitEvent } from '@/lib/dom';
 import { toUserMessage } from '@/lib/errors';
 import type { CommunityVote, CommunityVoteOption } from '@/lib/types';
 import { calculateVotePercentage, listCommunityVotes, submitCommunityBallot } from '@/lib/voting';
+import { getCurrentMemberRole } from '@/lib/admin';
+import { isAnonymousUser } from '@/lib/anonymous';
+import { useAuthUser } from '@/components/auth/useAuthUser';
 
 export type VotingBoardOperations = {
   list: typeof listCommunityVotes;
@@ -134,7 +137,9 @@ function VoteCard({ vote, onSaved, submitBallot }: { vote: CommunityVote; onSave
 }
 
 export default function VotingBoard({ operations = defaultOperations }: { operations?: VotingBoardOperations }) {
+  const { user, loading: authLoading } = useAuthUser();
   const [votes, setVotes] = useState<CommunityVote[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const loadSequence = useRef(0);
@@ -160,6 +165,18 @@ export default function VotingBoard({ operations = defaultOperations }: { operat
     return () => { loadSequence.current += 1; };
   }, [load]);
 
+  useEffect(() => {
+    let active = true;
+    if (authLoading || !user || isAnonymousUser(user)) {
+      setIsAdmin(false);
+      return () => { active = false; };
+    }
+    getCurrentMemberRole()
+      .then((role) => { if (active) setIsAdmin(role === 'admin' || role === 'super_admin'); })
+      .catch(() => { if (active) setIsAdmin(false); });
+    return () => { active = false; };
+  }, [authLoading, user]);
+
   if (loading) return <p className="card p-6 text-braga-100" role="status">Loading community votes…</p>;
   if (error) return <p className="error-message" role="alert">{error}</p>;
 
@@ -169,7 +186,10 @@ export default function VotingBoard({ operations = defaultOperations }: { operat
   return (
     <div className="space-y-10">
       <section aria-labelledby="open-votes-title">
-        <div className="mb-5"><h2 id="open-votes-title" className="text-2xl font-black text-white">Open votes</h2><p className="mt-2 text-sm text-braga-200">Results are live. Signed-in members can change their choice until each deadline.</p></div>
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div><h2 id="open-votes-title" className="text-2xl font-black text-white">Open votes</h2><p className="mt-2 text-sm text-braga-200">Results are live. Signed-in members can change their choice until each deadline.</p></div>
+          {isAdmin && <a className="btn-primary" href="/admin/voting">Create a new poll</a>}
+        </div>
         <div className="space-y-5">
           {openVotes.map((vote) => <VoteCard key={vote.id} vote={vote} onSaved={refresh} submitBallot={operations.submit} />)}
           {openVotes.length === 0 && <p className="card p-6 text-braga-100">No votes are open right now.</p>}

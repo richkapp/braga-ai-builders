@@ -11,8 +11,10 @@ import type { Event, Idea, RipCategory, RipTag } from '@/lib/types';
 import AuthRequired from '@/components/auth/AuthRequired';
 import UpvoteButton from './UpvoteButton';
 import BookmarkButton, { type BookmarkAccess } from './BookmarkButton';
+import IdeaComposer from './IdeaComposer';
+import PostAuthorIdentity from './PostAuthorIdentity';
 import RipTaxonomyPicker from './RipTaxonomyPicker';
-import PostAuthorPreview from './PostAuthorPreview';
+
 import { usePostTagCatalog } from './usePostTagCatalog';
 
 type VoteCountRow = { idea_id: string; upvote_count: number };
@@ -24,6 +26,7 @@ type Props = {
   showIntro?: boolean;
   showViewTabs?: boolean;
   showFilters?: boolean;
+  layout?: 'default' | 'sidebar';
 };
 
 const filterPill = 'min-h-11 rounded-full border px-3 py-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-limewash/70';
@@ -125,12 +128,12 @@ const viewLabels: Record<FeedView, string> = {
 };
 
 function participationCopy(access: BookmarkAccess) {
-  if (access === 'active') return 'Your posts are tied to your member profile. Use My posts to edit them and My bookmarks to revisit saved posts.';
+  if (access === 'active') return null;
   if (access === 'inactive') return 'This account is signed in, but its community membership is not active. Contact an organizer if that looks wrong.';
   return <>You can post and vote without an account. Want your posts tied to your profile, editable, and bookmarkable? <a className="font-semibold text-limewash hover:underline" href="/signin">Already a member? Sign in with a magic link →</a></>;
 }
 
-export default function IdeaFeed({ initialView = 'all', showIntro = true, showViewTabs = true, showFilters = true }: Props) {
+export default function IdeaFeed({ initialView = 'all', showIntro = true, showViewTabs = true, showFilters = true, layout = 'default' }: Props) {
   const { tags: tagCatalog, error: tagCatalogError } = usePostTagCatalog();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -263,17 +266,23 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
   if (initialView !== 'all' && libraryAccess === 'signed-out') return <AuthRequired title={initialView === 'mine' ? 'Your posts' : 'Your bookmarks'} message="Sign in with your member account to see your personal post library." />;
   if (initialView !== 'all' && libraryAccess === 'inactive') return <div className="card p-6"><h2 className="text-xl font-bold text-white">Member access unavailable</h2><p className="mt-2 text-sm leading-6 text-braga-100">This account is signed in, but its community membership is not active. Contact an organizer if that looks wrong.</p></div>;
 
-  return (
-    <div className="space-y-5">
-      {showIntro && <aside className="rounded-2xl border border-braga-300/20 bg-braga-950/45 p-5" aria-label="Post participation information">
-        <div className="flex gap-3"><LuInfo className="mt-0.5 h-5 w-5 shrink-0 text-limewash" aria-hidden="true" /><div className="space-y-2 text-sm leading-6 text-braga-100"><p>{participationCopy(libraryAccess)}</p>{nextEvent && <p><span className="font-semibold text-white">Next event:</span> {formatEventDate(nextEvent.starts_at)} · <a className="font-semibold text-limewash hover:underline" href={nextEvent.external_url || '/events'} target="_blank" rel="noreferrer noopener">{nextEvent.title} ↗</a></p>}</div></div>
-      </aside>}
+  const introCopy = participationCopy(libraryAccess);
+  const intro = showIntro && (introCopy || nextEvent) && (
+    <aside className="rounded-2xl border border-braga-300/20 bg-braga-950/45 p-5" aria-label="Post participation information">
+      <div className="flex gap-3"><LuInfo className="mt-0.5 h-5 w-5 shrink-0 text-limewash" aria-hidden="true" /><div className="space-y-2 text-sm leading-6 text-braga-100">{introCopy && <p>{introCopy}</p>}{nextEvent && <p><span className="font-semibold text-white">Next event:</span> {formatEventDate(nextEvent.starts_at)} · <a className="font-semibold text-limewash hover:underline" href={nextEvent.external_url || '/events'} target="_blank" rel="noreferrer noopener">{nextEvent.title} ↗</a></p>}</div></div>
+    </aside>
+  );
 
-      {showViewTabs && libraryAccess === 'active' && <nav className="flex flex-wrap gap-2" aria-label="Post library views">
-        {(Object.keys(viewLabels) as FeedView[]).map((item) => <button key={item} type="button" className={`${filterPill} ${view === item ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={view === item} onClick={() => chooseView(item)}>{viewLabels[item]}</button>)}
+  const controls = (showFilters || (showViewTabs && libraryAccess === 'active')) && (
+    <section className="card space-y-6 p-5" aria-label="Filter posts">
+      <div>
+        <h2 className="text-lg font-black text-white">Filters</h2>
+        <p className="mt-1 text-xs leading-5 text-braga-300">Narrow the feed without losing your place.</p>
+      </div>
+      {showViewTabs && libraryAccess === 'active' && <nav className="grid gap-2" aria-label="Post library views">
+        {(Object.keys(viewLabels) as FeedView[]).map((item) => <button key={item} type="button" className={`${filterPill} text-left ${view === item ? 'border-limewash bg-limewash text-ink-950' : 'border-braga-300/30 text-braga-100 hover:border-limewash/60'}`} aria-pressed={view === item} onClick={() => chooseView(item)}>{viewLabels[item]}</button>)}
       </nav>}
-
-      {showFilters && <section className="space-y-4 rounded-2xl border border-braga-300/15 p-5" aria-label="Filter posts">
+      {showFilters && <>
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-braga-300">Category</p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -290,30 +299,47 @@ export default function IdeaFeed({ initialView = 'all', showIntro = true, showVi
           {tagCatalog.length > collapsedTagLimit && <button type="button" className="mx-auto mt-2 flex min-h-8 items-center justify-center rounded-full px-4 text-braga-300 transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-violet-300/60" aria-expanded={filtersExpanded} aria-controls="post-tag-filters" aria-label={filtersExpanded ? 'Show fewer tag filters' : 'Show all tag filters'} onClick={() => setFiltersExpanded((value) => !value)}><LuChevronDown className={`h-4 w-4 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} aria-hidden="true" /></button>}
           {tagCatalogError && <p className="mt-3 text-sm text-amber-200" role="alert">{tagCatalogError}</p>}
         </div>
-      </section>}
+      </>}
+    </section>
+  );
 
-      {filteredIdeas.map((idea) => {
-        const canEdit = libraryAccess === 'active' && Boolean(idea.viewer_can_edit);
-        const contentPadding = isAdmin ? 'sm:pr-56' : canEdit ? 'sm:pr-28' : 'sm:pr-14';
-        return <article key={idea.id} className="card relative flex flex-wrap gap-4 p-5 sm:flex-nowrap">
-          <UpvoteButton ideaId={idea.id} initialCount={idea.upvote_count ?? 0} initialVoted={idea.viewer_has_voted ?? false} disabled={idea.status === 'closed'} />
-          <div className={`min-w-0 flex-1 ${contentPadding}`}>
-            <TaxonomyBadges idea={idea} tagLabels={tagLabels} activeCategory={categoryFilter} selectedTags={selectedTags} onCategory={showFilters ? setCategoryFilter : undefined} onTag={showFilters ? toggleTagFilter : undefined} />
-            <div className="flex flex-wrap items-center gap-2"><a href={`/ideas/${idea.slug}`} className="text-xl font-bold text-white hover:text-limewash">{idea.title}</a>{idea.status === 'closed' && <span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">Done</span>}</div>
-            <p className="mt-2 line-clamp-3 text-sm leading-6 text-braga-100">{idea.body}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-braga-300"><span>{idea.month_key}</span><span aria-hidden="true">·</span><PostAuthorPreview profile={idea.profiles} /></div>
-          </div>
-          <div className="flex w-full justify-end gap-2 sm:absolute sm:right-4 sm:top-4 sm:w-auto">
+  const feed = <div className="space-y-5">
+    {filteredIdeas.map((idea) => {
+      const canEdit = libraryAccess === 'active' && Boolean(idea.viewer_can_edit);
+      return <article key={idea.id} className="card p-5 sm:p-6">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <PostAuthorIdentity profile={idea.profiles} createdAt={idea.created_at} />
+          <div className="ml-auto flex max-w-28 shrink-0 flex-wrap justify-end gap-2 sm:max-w-none">
             <BookmarkButton ideaId={idea.id} title={idea.title} initialBookmarked={idea.viewer_has_bookmarked} access={libraryAccess} onChange={(bookmarked) => updateBookmark(idea.id, bookmarked)} />
             {canEdit && <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-braga-300/30 text-braga-100 hover:border-limewash/70 hover:text-limewash" onClick={() => setEditing(idea)} aria-label={`Edit ${idea.title}`} title="Edit post"><LuPencil className="h-4 w-4" aria-hidden="true" /></button>}
             {isAdmin && idea.status !== 'closed' && <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-limewash/30 text-limewash hover:bg-limewash/10" onClick={() => void markDone(idea)} aria-label={`Mark ${idea.title} as done`} title="Mark done"><LuCheck className="h-4 w-4" aria-hidden="true" /></button>}
             {isAdmin && <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-red-300/30 text-red-200 hover:bg-red-300/10" onClick={() => void remove(idea)} aria-label={`Delete ${idea.title}`} title="Delete post"><LuTrash2 className="h-4 w-4" aria-hidden="true" /></button>}
           </div>
-        </article>;
-      })}
-      {ideas.length === 0 && <p className="card p-6 text-braga-100">No posts yet. Be the first to add one.</p>}
-      {ideas.length > 0 && filteredIdeas.length === 0 && <p className="card p-6 text-braga-100">{view === 'mine' ? 'You have not published any posts with your member profile yet.' : view === 'bookmarks' ? 'You have not bookmarked any posts yet.' : 'No posts match those filters.'}</p>}
-      {editing && <IdeaEditor idea={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(); }} />}
-    </div>
-  );
+        </header>
+        <div className="mt-5">
+          <div className="flex flex-wrap items-center gap-2"><a href={`/posts/${idea.slug}`} className="text-xl font-bold text-white hover:text-limewash">{idea.title}</a>{idea.status === 'closed' && <span className="rounded-full border border-limewash/30 bg-limewash/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-limewash">Done</span>}</div>
+          <div className="mt-3"><TaxonomyBadges idea={idea} tagLabels={tagLabels} activeCategory={categoryFilter} selectedTags={selectedTags} onCategory={showFilters ? setCategoryFilter : undefined} onTag={showFilters ? toggleTagFilter : undefined} /></div>
+          <p className="line-clamp-4 text-sm leading-6 text-braga-100">{idea.body}</p>
+        </div>
+        <footer className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
+          <UpvoteButton ideaId={idea.id} initialCount={idea.upvote_count ?? 0} initialVoted={idea.viewer_has_voted ?? false} disabled={idea.status === 'closed'} />
+        </footer>
+      </article>;
+    })}
+    {ideas.length === 0 && <p className="card p-6 text-braga-100">No posts yet. Be the first to add one.</p>}
+    {ideas.length > 0 && filteredIdeas.length === 0 && <p className="card p-6 text-braga-100">{view === 'mine' ? 'You have not published any posts with your member profile yet.' : view === 'bookmarks' ? 'You have not bookmarked any posts yet.' : 'No posts match those filters.'}</p>}
+    {editing && <IdeaEditor idea={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(); }} />}
+  </div>;
+
+  if (layout === 'sidebar') {
+    return <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start" aria-label="Post controls">
+        <IdeaComposer />
+        {controls}
+      </aside>
+      <div className="min-w-0 space-y-5">{intro}{feed}</div>
+    </div>;
+  }
+
+  return <div className="space-y-5">{intro}{controls}{feed}</div>;
 }

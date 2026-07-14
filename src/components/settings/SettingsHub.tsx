@@ -64,7 +64,7 @@ export default function SettingsHub({ initialTab = 'profile' }: { initialTab?: S
           <div className="space-y-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div><h2 className="text-2xl font-black text-white">My posts</h2><p className="mt-1 text-sm text-braga-200">Your member-attributed post history. Open posts can be edited here.</p></div>
-              <a className="text-sm font-bold text-limewash hover:underline" href="/ideas">Browse all posts →</a>
+              <a className="text-sm font-bold text-limewash hover:underline" href="/posts">Browse all posts →</a>
             </div>
             <IdeaFeed initialView="mine" showIntro={false} showViewTabs={false} showFilters={false} />
           </div>
@@ -73,7 +73,7 @@ export default function SettingsHub({ initialTab = 'profile' }: { initialTab?: S
           <div className="space-y-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div><h2 className="text-2xl font-black text-white">My bookmarks</h2><p className="mt-1 text-sm text-braga-200">Posts you saved for later. Remove a bookmark with the same button.</p></div>
-              <a className="text-sm font-bold text-limewash hover:underline" href="/ideas">Find posts →</a>
+              <a className="text-sm font-bold text-limewash hover:underline" href="/posts">Find posts →</a>
             </div>
             <IdeaFeed initialView="bookmarks" showIntro={false} showViewTabs={false} showFilters={false} />
           </div>
