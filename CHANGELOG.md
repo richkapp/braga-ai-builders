@@ -4,7 +4,7 @@
 
 Branding:
 
-- Replaced the illegible circular navigation badge with the same text-free circuit-brain mark used by the favicon.
+- Replaced the illegible circular navigation badge with the supplied colorful brain-and-network artwork on a transparent background.
 - Rebuilt the browser favicon as a brain-only circuit mark with separate light- and dark-browser variants.
 
 Profile settings:
