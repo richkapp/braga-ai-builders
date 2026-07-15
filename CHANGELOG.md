@@ -48,6 +48,7 @@ Branding:
 
 Authentication:
 
+- Consolidated email-link consent and the Terms/Privacy links into one explicit checkbox sentence across member access and post-composer sign-in.
 - Added polished, keyboard-accessible **Sign In** and **Sign Up** tabs to `/signin`; existing members keep the email-link form while new members see the WhatsApp and friend-invite routes without opening a misleading public signup form.
 - Made the new-member invitation guidance prominent on the sign-in form and linked both paths: ask a friend who is already a member or join the WhatsApp community.
 - Replaced magic-link jargon with the same three-step **Enter email → Open email → Tap the link** explanation across sign-in, private-invite signup, and post-composer access, while shortening consent, legal, success, and retry copy.
