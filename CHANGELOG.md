@@ -46,6 +46,10 @@ Branding:
 - Replaced the illegible circular navigation badge with the supplied colorful brain-and-network artwork on a transparent background.
 - Rebuilt the browser favicon as a brain-only circuit mark with separate light- and dark-browser variants.
 
+Authentication:
+
+- Replaced magic-link jargon with the same three-step **Enter email → Open email → Tap the link** explanation across sign-in, private-invite signup, and post-composer access, while shortening consent, legal, success, and retry copy.
+
 Privacy and support:
 
 - Added GDPR-aware Privacy Policy and Terms and Conditions pages grounded in the site's actual Supabase, Vercel, browser-storage, anonymous-participation, invitation, and support-report data flows.
