@@ -12,6 +12,7 @@ Performance:
 
 Posts:
 
+- Clarified the logged-out post composer: membership is invite-only, with invitations available through the WhatsApp community or an existing member.
 - Renamed the public post route from `/ideas` to `/posts`, with permanent compatibility redirects for existing links and post detail URLs.
 - Moved post creation into an accessible modal launched from the left sidebar, and moved post library, category, and tag filters into that sidebar.
 - Reworked feed cards around the poster's avatar, name, and publication date, with clearly distinct member and anonymous fallback artwork.
@@ -41,6 +42,7 @@ Community voting:
 
 Branding:
 
+- Made **See Posts** the landing-page hero's primary action and moved **Join the WhatsApp Community** to the secondary position.
 - Replaced the illegible circular navigation badge with the supplied colorful brain-and-network artwork on a transparent background.
 - Rebuilt the browser favicon as a brain-only circuit mark with separate light- and dark-browser variants.
 
