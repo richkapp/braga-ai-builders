@@ -48,6 +48,7 @@ Branding:
 
 Authentication:
 
+- Made the new-member invitation guidance prominent on the sign-in form and linked both paths: ask a friend who is already a member or join the WhatsApp community.
 - Replaced magic-link jargon with the same three-step **Enter email → Open email → Tap the link** explanation across sign-in, private-invite signup, and post-composer access, while shortening consent, legal, success, and retry copy.
 
 Privacy and support:
