@@ -48,6 +48,7 @@ Branding:
 
 Authentication:
 
+- Reframed private invite links as a welcoming introduction to Braga AI Builders, with a short community description and one clear instruction to create an account—or sign in—using a magic link.
 - Added a Supabase-aligned 60-second resend countdown after successful magic-link requests, followed by an in-place **Send magic link again** action across member access, private-invite signup, and post-composer sign-in.
 - Consolidated email-link consent and the Terms/Privacy links into one explicit checkbox sentence across member access and post-composer sign-in.
 - Added polished, keyboard-accessible **Sign In** and **Sign Up** tabs to `/signin`; existing members keep the email-link form while new members see the WhatsApp and friend-invite routes without opening a misleading public signup form.
