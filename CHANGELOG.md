@@ -28,6 +28,7 @@ Posts:
 - Corrected post sharing to send only the canonical post link, without appending the post title or community name.
 - Renamed the signed-in Settings navigation label and page heading to Dashboard.
 - Kept post creation available through feed refreshes and read failures, and prevented magic-link requests from racing backward navigation in the composer.
+- Added a simple **Back to posts** action above every post detail and persisted the active library, category, tag, and member filters in the Posts URL and current browser tab.
 
 Community voting:
 
@@ -65,7 +66,8 @@ Privacy and support:
 
 Profile settings:
 
-- Replaced editable external avatar URLs with native profile-photo uploads that validate 2 MB JPEG/PNG/WebP sources, center-crop them to 384 px WebP, and keep compressed objects under 256 KB.
+- Replaced editable external avatar URLs with native profile-photo uploads that validate JPEG/PNG/WebP sources up to 10 MB and 25 megapixels, center-crop them to 384 px WebP, and keep compressed objects under 256 KB.
+- Generate previews from the compressed 384 px image instead of decoding the large source a second time on memory-constrained mobile browsers.
 - Added immediate photo preview, replacement, removal, broken-image fallbacks, and cache-busted avatar rendering across member, post-author, and organizer surfaces.
 - Bound one opaque Storage object to each active member through narrow RPCs and Storage RLS, without exposing Auth user IDs in public asset paths.
 - Member deletion now removes the avatar through Storage first, while the database RPC refuses account deletion if a public avatar object remains.
