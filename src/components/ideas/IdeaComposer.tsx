@@ -57,9 +57,11 @@ export default function IdeaComposer({ tagCatalog, tagCatalogLoading, tagCatalog
       setCategory(draft.category);
       setTags(draft.tags);
     }
-    if (new URL(window.location.href).searchParams.get('restoreIdea') === '1') {
+    const currentUrl = new URL(window.location.href);
+    if (currentUrl.searchParams.get('restoreIdea') === '1') {
       setMessage('Your post is restored and ready to share.');
-      window.history.replaceState(window.history.state, document.title, '/posts');
+      currentUrl.searchParams.delete('restoreIdea');
+      window.history.replaceState(window.history.state, document.title, `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
       dialogRef.current?.showModal();
     }
   }, []);
