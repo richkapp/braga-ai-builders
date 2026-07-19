@@ -9,8 +9,8 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "test": "bun test",
-    "verify": "bun test && bun run build"
+    "test": "bun test --max-concurrency 1",
+    "verify": "bun test --max-concurrency 1 && bun run build"
   },
   "dependencies": {
     "@astrojs/react": "6.0.1",
