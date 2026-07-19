@@ -48,6 +48,8 @@ Branding:
 
 Authentication:
 
+- Replaced the misleading existing-member delivery confirmation with an enumeration-safe **Request received** state, while preserving Supabase Auth error codes for diagnostics and returning truthful retry errors on private-invite delivery failures.
+- Kept accepted invite emails successful when post-send bookkeeping needs reconciliation, and separated post-composer resend failures from the prior successful request state.
 - Reframed private invite links as a welcoming introduction to Braga AI Builders, with a short community description and one clear instruction to create an account—or sign in—using a magic link.
 - Added a Supabase-aligned 60-second resend countdown after successful magic-link requests, followed by an in-place **Send magic link again** action across member access, private-invite signup, and post-composer sign-in.
 - Consolidated email-link consent and the Terms/Privacy links into one explicit checkbox sentence across member access and post-composer sign-in.
