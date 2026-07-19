@@ -48,6 +48,7 @@ Branding:
 
 Authentication:
 
+- Moved Braga's production Auth email from Brevo's rewritten sender to direct Gmail SMTP after enabling 2-Step Verification and creating an App Password; a controlled magic-link request returned HTTP 200 and arrived from the expected Gmail sender.
 - Replaced the misleading existing-member delivery confirmation with an enumeration-safe **Request received** state, while preserving Supabase Auth error codes for diagnostics and returning truthful retry errors on private-invite delivery failures.
 - Kept accepted invite emails successful when post-send bookkeeping needs reconciliation, and separated post-composer resend failures from the prior successful request state.
 - Reframed private invite links as a welcoming introduction to Braga AI Builders, with a short community description and one clear instruction to create an account—or sign in—using a magic link.
