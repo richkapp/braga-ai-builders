@@ -31,6 +31,12 @@ git remote -v
 - Braga's Supabase project, Vercel project, environment variables, Vault values, email-provider configuration, and member data are downstream infrastructure. None belong in Git.
 - Optional platform features are enabled or disabled for Braga deliberately. An upstream merge must not silently opt Braga into a new external service.
 
+### Production authentication email
+
+Braga Auth email uses direct Gmail SMTP configured in **Supabase Authentication → Emails → SMTP Settings**. The Google account must have 2-Step Verification enabled and Supabase must hold a dedicated App Password; the account password is never used as the SMTP credential. Brevo is not in the Auth email path.
+
+Keep the Gmail address and App Password out of Git, documentation, screenshots, and chat. A Google account password change revokes its App Passwords, so generate a replacement and update Supabase before expecting delivery to recover. Every provider or credential change requires an explicitly approved controlled magic-link test that verifies both arrival and the visible From address.
+
 ## Shipping Braga changes
 
 1. Branch from Braga `main`.
