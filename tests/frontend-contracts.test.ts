@@ -350,7 +350,7 @@ describe('launch frontend contracts', () => {
     expect(footer).toContain('text-limewash underline');
     expect(footer).toContain('https://buymeacoffee.com/richkapp');
     expect(footer).toContain('☕️ buy the creator a coffee');
-    expect(footer).toContain('View on GitHub');
+    expect(footer).not.toContain('View on GitHub');
     expect(footer).toContain('BugReportLauncher client:visible');
     expect(footer).not.toContain('Source code');
     await expect(access(new URL('src/pages/join.astro', root))).rejects.toThrow();
