@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import EventDetail from '../../components/events/EventDetail';
 import { communityConfig, communityPageTitle } from '../../config/community';
 import { publicRecordLookup } from '../../lib/public-server';
-import { normalizeSocialText, normalizeSocialTitle, socialCardPath } from '../../lib/socialCards';
+import { normalizeSocialText, normalizeSocialTitle, socialCardPath, socialCardRevision } from '../../lib/socialCards';
 import type { Event } from '../../lib/types';
 
 export const prerender = false;
@@ -24,11 +24,14 @@ const description = event
 const socialImageAlt = event
   ? `${normalizeSocialTitle(event.title, 120)}, an event from ${communityConfig.name}`
   : `Community event from ${communityConfig.name}`;
+const socialImageRevision = event
+  ? socialCardRevision(event.title, event.description, event.starts_at, event.location_name)
+  : undefined;
 ---
 <BaseLayout
   title={title}
   description={description}
-  socialImage={socialCardPath('event', slug)}
+  socialImage={socialCardPath('event', slug, socialImageRevision)}
   socialImageAlt={socialImageAlt}
   socialType="article"
 >

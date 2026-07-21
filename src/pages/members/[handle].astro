@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import MemberProfile from '../../components/profile/MemberProfile';
 import { communityConfig, communityPageTitle } from '../../config/community';
 import { publicRecordLookup } from '../../lib/public-server';
-import { normalizeSocialText, normalizeSocialTitle, socialCardPath, type MemberCardRecord } from '../../lib/socialCards';
+import { normalizeSocialText, normalizeSocialTitle, socialCardPath, socialCardRevision, type MemberCardRecord } from '../../lib/socialCards';
 
 export const prerender = false;
 
@@ -22,11 +22,14 @@ const description = member
 const socialImageAlt = member
   ? `${normalizeSocialTitle(member.display_name, 72)}, a member of ${communityConfig.name}`
   : `Community member from ${communityConfig.name}`;
+const socialImageRevision = member
+  ? socialCardRevision(member.handle, member.display_name, member.bio)
+  : undefined;
 ---
 <BaseLayout
   title={title}
   description={description}
-  socialImage={socialCardPath('member', handle)}
+  socialImage={socialCardPath('member', handle, socialImageRevision)}
   socialImageAlt={socialImageAlt}
   socialType="profile"
 >

@@ -69,10 +69,25 @@ export function normalizeSocialTitle(value: string | null | undefined, maxLength
   return normalizeText(value, maxLength, false);
 }
 
-export function socialCardPath(kind: SocialCardKind, identifier?: string) {
+export function socialCardRevision(...values: Array<string | null | undefined>) {
+  let hash = 2166136261;
+  for (const value of values) {
+    const text = value ?? '';
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    hash ^= 31;
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+export function socialCardPath(kind: SocialCardKind, identifier?: string, revision?: string) {
   const search = new URLSearchParams({ kind, v: SOCIAL_CARD_VERSION });
   if (kind === 'post' || kind === 'event') search.set('slug', identifier ?? '');
   if (kind === 'member') search.set('handle', identifier ?? '');
+  if (revision) search.set('r', revision);
   return `/api/social-card.png?${search.toString()}`;
 }
 
