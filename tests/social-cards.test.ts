@@ -8,6 +8,7 @@ import {
   postSocialCard,
   socialCardDescriptionSize,
   socialCardPath,
+  socialCardRevision,
   socialCardTitleSize,
 } from '@/lib/socialCards';
 
@@ -21,6 +22,9 @@ describe('social sharing cards', () => {
     expect(socialCardPath('event', 'build-night')).toBe('/api/social-card.png?kind=event&v=1&slug=build-night');
     expect(socialCardPath('member', 'richard')).toBe('/api/social-card.png?kind=member&v=1&handle=richard');
     expect(socialCardPath('invite')).not.toContain('code');
+    const revision = socialCardRevision('A useful post', 'The body', 'resource');
+    expect(socialCardPath('post', 'useful-post', revision)).toBe(`/api/social-card.png?kind=post&v=1&slug=useful-post&r=${revision}`);
+    expect(socialCardRevision('A useful post', 'Changed body', 'resource')).not.toBe(revision);
   });
 
   test('normalizes untrusted copy for bounded card overlays', () => {
@@ -96,9 +100,9 @@ describe('social sharing cards', () => {
     expect(endpoint).not.toContain("url.searchParams.get('description')");
     expect(home).toContain("socialCardPath('home')");
     expect(invite).toContain("socialCardPath('invite')");
-    expect(post).toContain("socialCardPath('post', slug)");
-    expect(event).toContain("socialCardPath('event', slug)");
-    expect(member).toContain("socialCardPath('member', handle)");
+    expect(post).toContain("socialCardPath('post', slug, socialImageRevision)");
+    expect(event).toContain("socialCardPath('event', slug, socialImageRevision)");
+    expect(member).toContain("socialCardPath('member', handle, socialImageRevision)");
     expect(invite).not.toContain("socialCardPath('invite', code)");
   });
 });

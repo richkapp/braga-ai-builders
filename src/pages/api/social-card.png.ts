@@ -209,7 +209,7 @@ export const GET: APIRoute = async ({ request }) => {
         { name: 'Instrument Sans', data: boldFontData, weight: 700, style: 'normal' },
       ],
       headers: {
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+        'Cache-Control': 'public, max-age=31536000, immutable',
         'X-Content-Type-Options': 'nosniff',
       },
     });

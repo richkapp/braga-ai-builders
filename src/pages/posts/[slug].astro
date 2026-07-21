@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import IdeaDetail from '../../components/ideas/IdeaDetail';
 import { communityConfig, communityPageTitle } from '../../config/community';
 import { publicRecordLookup } from '../../lib/public-server';
-import { normalizeSocialText, normalizeSocialTitle, socialCardPath, type PostCardRecord } from '../../lib/socialCards';
+import { normalizeSocialText, normalizeSocialTitle, socialCardPath, socialCardRevision, type PostCardRecord } from '../../lib/socialCards';
 
 export const prerender = false;
 
@@ -22,11 +22,12 @@ const description = post
 const socialImageAlt = post
   ? `${normalizeSocialTitle(post.title, 120)}, a community post from ${communityConfig.name}`
   : `Community post from ${communityConfig.name}`;
+const socialImageRevision = post ? socialCardRevision(post.title, post.body, post.category) : undefined;
 ---
 <BaseLayout
   title={title}
   description={description}
-  socialImage={socialCardPath('post', slug)}
+  socialImage={socialCardPath('post', slug, socialImageRevision)}
   socialImageAlt={socialImageAlt}
   socialType="article"
 >

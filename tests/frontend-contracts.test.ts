@@ -81,7 +81,7 @@ describe('launch frontend contracts', () => {
     expect(page).toContain('IdeaFeed layout="sidebar"');
     expect(legacyPage).toContain("Astro.redirect(`/posts${Astro.url.search}`");
     expect(detailPage).toContain("publicRecordLookup<PostCardRecord>('ideas', 'slug', slug");
-    expect(detailPage).toContain("socialCardPath('post', slug)");
+    expect(detailPage).toContain("socialCardPath('post', slug, socialImageRevision)");
     expect(legacyDetailPage).toContain("Astro.params.slug ?? ''");
     expect(legacyDetailPage).toContain('Astro.url.search');
     expect(legacyDetailPage).toContain('Astro.redirect(`/posts/${encodeURIComponent');
