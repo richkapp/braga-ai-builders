@@ -43,6 +43,7 @@ Community voting:
 
 Branding:
 
+- Gated every public WhatsApp invitation behind the Braga Area WhatsApp Community rules, local-residency confirmation, and explicit Terms and Privacy consent before opening the group invite.
 - Added route-aware Open Graph and Twitter preview cards over Braga hero photography for the homepage, invitation links, post and event details, and member profiles.
 - Resolved real post, event, and member titles and descriptions in server-rendered metadata, and prevented production builds from emitting localhost canonical or image URLs.
 - Added content-derived revision keys so edited posts, events, and member profiles receive fresh share cards under immutable CDN caching.
