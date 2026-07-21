@@ -43,6 +43,8 @@ Community voting:
 
 Branding:
 
+- Added route-aware Open Graph and Twitter preview cards over Braga hero photography for the homepage, invitation links, post and event details, and member profiles.
+- Resolved real post, event, and member titles and descriptions in server-rendered metadata, and prevented production builds from emitting localhost canonical or image URLs.
 - Made **See Posts** the landing-page hero's primary action and moved **Join the WhatsApp Community** to the secondary position.
 - Replaced the illegible circular navigation badge with the supplied colorful brain-and-network artwork on a transparent background.
 - Rebuilt the browser favicon as a brain-only circuit mark with separate light- and dark-browser variants.
