@@ -60,7 +60,7 @@ Authentication:
 - Added a Supabase-aligned 60-second resend countdown after successful magic-link requests, followed by an in-place **Send magic link again** action across member access, private-invite signup, and post-composer sign-in.
 - Consolidated email-link consent and the Terms/Privacy links into one explicit checkbox sentence across member access and post-composer sign-in.
 - Added polished, keyboard-accessible **Sign In** and **Sign Up** tabs to `/signin`; existing members keep the email-link form while new members see the WhatsApp and friend-invite routes without opening a misleading public signup form.
-- Made the new-member invitation guidance prominent on the sign-in form and linked both paths: ask a friend who is already a member or join the WhatsApp community.
+- Simplified the Sign In panel's new-member prompt to **New here? Sign Up →**, switching and focusing the accessible Sign Up tab instead of duplicating its invitation details.
 - Replaced magic-link jargon with the same three-step **Enter email → Open email → Tap the link** explanation across sign-in, private-invite signup, and post-composer access, while shortening consent, legal, success, and retry copy.
 
 Privacy and support:
@@ -70,7 +70,8 @@ Privacy and support:
 
 Profile settings:
 
-- Replaced editable external avatar URLs with native profile-photo uploads that validate JPEG/PNG/WebP sources up to 10 MB and 25 megapixels, center-crop them to 384 px WebP, and keep compressed objects under 256 KB.
+- Accepted iPhone HEIC and HEIF profile photos, lazily converted unsupported sources in the browser, then kept the existing square 384 px WebP compression and upload limits.
+- Replaced editable external avatar URLs with native profile-photo uploads that validate JPEG/PNG/WebP/HEIC/HEIF sources up to 10 MB and 25 megapixels, center-crop them to 384 px WebP, and keep compressed objects under 256 KB.
 - Generate previews from the compressed 384 px image instead of decoding the large source a second time on memory-constrained mobile browsers.
 - Added immediate photo preview, replacement, removal, broken-image fallbacks, and cache-busted avatar rendering across member, post-author, and organizer surfaces.
 - Bound one opaque Storage object to each active member through narrow RPCs and Storage RLS, without exposing Auth user IDs in public asset paths.
