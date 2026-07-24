@@ -16,6 +16,7 @@ Super-admin settings:
 - Added one super-admin-only `/admin/settings` surface for Voting, event creation, anonymous posting, signed-out posting, anonymous commenting, and anonymous replies.
 - Moved existing post participation switches out of post moderation and moved Voting availability out of vote management so community-level controls live in one predictable place.
 - Added a database-backed event-creation switch that preserves existing event management while blocking new event inserts even when a stale or bypassed client still shows the form.
+- Serialized event creation against feature changes and organizer suspension, and now stamps `created_by` at the database boundary.
 - Restricted Voting availability changes to super admins while preserving public and member database enforcement.
 
 Performance:

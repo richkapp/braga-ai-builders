@@ -32,6 +32,39 @@ describe('super-admin community feature settings', () => {
     expect(migration).toContain('grant execute on function public.super_admin_set_event_creation_enabled(boolean) to authenticated');
   });
 
+  test('serializes event creation against feature changes and suspension', async () => {
+    const migration = await read('supabase/migrations/038_race_safe_feature_controls.sql');
+    const eventSetter = migration.slice(
+      migration.indexOf('create or replace function public.super_admin_set_event_creation_enabled'),
+      migration.indexOf('-- Keep the rolling-deploy-compatible Voting RPC name')
+    );
+    const votingSetter = migration.slice(
+      migration.indexOf('create or replace function public.admin_set_voting_feature_enabled'),
+      migration.indexOf('-- The RLS insert policy remains defense in depth')
+    );
+    const eventGuard = migration.slice(
+      migration.indexOf('create or replace function public.enforce_event_creation_before_insert'),
+      migration.indexOf('drop trigger if exists enforce_event_creation_before_insert')
+    );
+
+    for (const setter of [eventSetter, votingSetter]) {
+      expect(setter).toContain("profile.role = 'super_admin'");
+      expect(setter).toContain('profile.suspended_at is null');
+      expect(setter).toContain('for share');
+      expect(setter).toContain('updated_by = viewer_id');
+    }
+
+    expect(eventGuard).toContain("viewer_role not in ('admin', 'super_admin')");
+    expect(eventGuard).toContain("flag.feature_key = 'allow_event_creation'");
+    expect(eventGuard).toContain('for share');
+    expect(eventGuard).toContain('new.created_by := viewer_id');
+    expect(eventGuard).toContain("raise exception 'Event creation is disabled'");
+    expect(eventGuard).toContain("auth.role() = 'service_role'");
+    expect(eventGuard).not.toContain("session_user = 'postgres'");
+    expect(migration).toContain('before insert on public.events');
+    expect(migration).toContain('revoke all on function public.enforce_event_creation_before_insert() from public, anon, authenticated');
+  });
+
   test('centralizes feature switches on a super-admin-only settings route', async () => {
     const [dashboard, page, settings, participation, ideas, voting] = await Promise.all([
       read('src/components/admin/AdminDashboard.tsx'),
