@@ -170,7 +170,7 @@ where id = (
 );
 ```
 
-Normal authenticated users cannot promote themselves through the application API. The super admin can assign ordinary admins, suspend or restore member access, and permanently delete members from `/admin/members`. Ordinary admins can use organizer tools but cannot manage roles or member accounts. Every active member receives five rolling single-use invitations in Settings; admins can additionally create reusable 1–50-use campaign links in `/admin/invites`.
+Normal authenticated users cannot promote themselves through the application API. The super admin can assign ordinary admins, suspend or restore member access, permanently delete members from `/admin/members`, and control community-wide availability and participation under `/admin/settings`. Ordinary admins can use organizer tools but cannot manage roles, member accounts, or feature settings. Every active member receives five rolling single-use invitations in Settings; admins can additionally create reusable 1–50-use campaign links in `/admin/invites`.
 
 ## 7. Deploy
 

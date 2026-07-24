@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { readFile } from 'node:fs/promises';
 import {
   COMMUNITY_PLATFORM_RELEASE,
-  LAUNCHER_FEATURES,
+  INCLUDED_PLATFORM_FEATURES,
   buildCommunityLaunchPrompt,
   buildCommunityRecoveryPrompt,
   platformLanguageFromStoredValue,
@@ -17,39 +17,34 @@ const completeAnswers: CommunityLauncherAnswers = {
   purpose: 'Help local makers share practical skills and build projects together.',
   audience: 'Makers, craftspeople, students, and curious neighbours.',
   organizerName: 'Rita Costa',
-  country: 'Portugal',
   locale: 'English',
-  timeZone: 'Europe/Lisbon',
-  features: {
-    posts: true,
-    directory: true,
-    events: true,
-    voting: false,
-    channel: false,
-    bugEmail: false,
-  },
 };
 
 describe('create-community launch brief', () => {
-  test('pins the stable upstream release and carries approved community choices', () => {
+  test('pins the stable source and installs the complete platform into organizer-owned accounts', () => {
     const prompt = buildCommunityLaunchPrompt(completeAnswers);
 
     expect(COMMUNITY_PLATFORM_RELEASE.tag).toBe('v0.2.0');
+    expect(INCLUDED_PLATFORM_FEATURES.length).toBeGreaterThanOrEqual(6);
     expect(prompt).toContain('Riverside Makers');
     expect(prompt).toContain('Coimbra, Portugal');
     expect(prompt).toContain('- Platform language: English');
-    expect(prompt).not.toContain('- Locale:');
     expect(prompt).toContain(COMMUNITY_PLATFORM_RELEASE.url);
     expect(prompt).toContain(`git clone --branch ${COMMUNITY_PLATFORM_RELEASE.tag}`);
-    expect(prompt).toContain('- Posts and discussions: YES — launch enabled');
-    expect(prompt).toContain('- Community voting: NOT NOW — keep disabled but available later');
+    expect(prompt).toContain('Install every built module');
+    expect(prompt).toContain('new organizer-owned Supabase account and project');
+    expect(prompt).toContain('new organizer-owned Vercel account and project');
+    expect(prompt).toContain('Do not build OAuth-based or one-click provider provisioning');
+    expect(prompt).toContain('/admin/settings');
+    expect(prompt).toContain('Voting, event creation, anonymous posting, and anonymous commenting');
     expect(prompt).toContain('Ask me for the hero image only after the source is available locally.');
     expect(prompt).toContain('Do not use the Braga AI Builders downstream repository');
     expect(prompt).toContain('Homepage + organizer login + member invitation');
+    expect(prompt).not.toContain('NOT NOW');
     expect(prompt).not.toContain('undefined');
   });
 
-  test('keeps provider secrets outside the launcher and the generated handoff', () => {
+  test('keeps provider secrets outside the launcher and guided handoff', () => {
     const prompt = buildCommunityLaunchPrompt(completeAnswers);
     const recovery = buildCommunityRecoveryPrompt(completeAnswers);
 
@@ -62,8 +57,7 @@ describe('create-community launch brief', () => {
     }
   });
 
-  test('requires explicit agent capability, core community details, and every feature answer', () => {
-    expect(LAUNCHER_FEATURES).toHaveLength(6);
+  test('requires only capable-agent confirmation and plain community facts', () => {
     expect(validateCommunityAnswers(completeAnswers)).toEqual([]);
 
     const incomplete: CommunityLauncherAnswers = {
@@ -71,14 +65,12 @@ describe('create-community launch brief', () => {
       agentConfirmed: false,
       communityName: ' ',
       purpose: '',
-      features: { ...completeAnswers.features, events: null },
     };
 
     expect(validateCommunityAnswers(incomplete)).toEqual([
       'Confirm that your AI can access files and run commands.',
       'Add your community name.',
       'Describe why the community exists.',
-      'Answer Yes or Not now for every launch feature.',
     ]);
   });
 
@@ -88,7 +80,7 @@ describe('create-community launch brief', () => {
     expect(platformLanguageFromStoredValue('Spanish')).toBe('Spanish');
   });
 
-  test('ships as a client-side public wizard with a visible site entry point', async () => {
+  test('ships a shorter client-side flow without feature-selection onboarding', async () => {
     const [page, launcher, nav, footer] = await Promise.all([
       readFile('src/pages/create.astro', 'utf8'),
       readFile('src/components/create-community/CreateCommunityLauncher.tsx', 'utf8'),
@@ -100,13 +92,13 @@ describe('create-community launch brief', () => {
     expect(page).toContain('Give your local community');
     expect(page).toContain('href="#community-launcher"');
     expect(launcher).toContain('Platform Language');
-    expect(launcher).not.toContain('Public locale');
-    expect(launcher).toContain("const STORAGE_KEY = 'local-community-launcher-v1'");
-    expect(launcher).toContain("{ id: 'features', label: 'Features' }");
+    expect(launcher).toContain("{ id: 'review', label: 'Review' }");
+    expect(launcher).not.toContain("{ id: 'features', label: 'Features' }");
+    expect(launcher).toContain('Every built feature is included');
     expect(launcher).toContain('Copy launch brief');
     expect(launcher).toContain('Copy recovery brief');
     expect(launcher).toContain('Back to review');
-    expect(launcher).toContain('Nothing is preselected.');
+    expect(launcher).not.toContain('Nothing is preselected.');
     expect(launcher).not.toContain('type="file"');
     expect(launcher).not.toContain('fetch(');
     expect(nav.match(/href="\/create"/g)).toHaveLength(2);
