@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+Create your community launcher:
+
+- Added a free public `/create` wizard that turns plain-English community identity, locality, audience, operating defaults, and explicit launch-feature choices into one tailored AI launch brief.
+- Pinned generated instructions to the current stable Local Community Platform release, kept credentials out of the launcher, and included a recovery brief for fresh agent sessions.
+- Added public navigation entry points, browser-local progress recovery, capability and safety gates, and a launch definition that requires the homepage, organizer login, and a real member invitation to work.
+
 Performance:
 
 - Pre-rendered fixed public and account-shell routes for Vercel CDN delivery while keeping parameterized data routes on demand in Paris beside the Supabase project.

@@ -56,6 +56,7 @@ describe('launch frontend contracts', () => {
     expect(nav).toContain('href="/posts"');
     expect(nav).toContain('href="/events"');
     expect(nav).toContain('href="/members"');
+    expect(nav).toContain('href="/create"');
     expect(nav.match(/>Posts<\/a>/g)).toHaveLength(2);
     expect(nav.match(/<VotingFeatureLink/g)).toHaveLength(2);
     expect(nav).not.toContain('>Ideas</a>');
