@@ -24,7 +24,7 @@ describe('create-community launch brief', () => {
   test('pins the stable source and installs the complete platform into organizer-owned accounts', () => {
     const prompt = buildCommunityLaunchPrompt(completeAnswers);
 
-    expect(COMMUNITY_PLATFORM_RELEASE.tag).toBe('v0.2.0');
+    expect(COMMUNITY_PLATFORM_RELEASE.tag).toBe('v0.3.0');
     expect(INCLUDED_PLATFORM_FEATURES.length).toBeGreaterThanOrEqual(6);
     expect(prompt).toContain('Riverside Makers');
     expect(prompt).toContain('Coimbra, Portugal');
@@ -37,6 +37,9 @@ describe('create-community launch brief', () => {
     expect(prompt).toContain('Do not build OAuth-based or one-click provider provisioning');
     expect(prompt).toContain('/admin/settings');
     expect(prompt).toContain('Voting, event creation, anonymous posting, and anonymous commenting');
+    expect(prompt).toContain('This pinned release already provides those controls');
+    expect(prompt).toContain('stop and report a source integrity or version mismatch');
+    expect(prompt).not.toContain('add the smallest safe database-backed control');
     expect(prompt).toContain('Ask me for the hero image only after the source is available locally.');
     expect(prompt).toContain('Do not use the Braga AI Builders downstream repository');
     expect(prompt).toContain('Homepage + organizer login + member invitation');

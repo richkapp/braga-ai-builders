@@ -1,7 +1,7 @@
 export const COMMUNITY_PLATFORM_RELEASE = {
-  tag: 'v0.2.0',
+  tag: 'v0.3.0',
   repository: 'https://github.com/richkapp/local-community-platform.git',
-  url: 'https://github.com/richkapp/local-community-platform/releases/tag/v0.2.0',
+  url: 'https://github.com/richkapp/local-community-platform/releases/tag/v0.3.0',
 } as const;
 
 export const INCLUDED_PLATFORM_FEATURES = [
@@ -123,7 +123,7 @@ Install every built module. Do not ask me to choose features during setup and do
 
 ${includedFeatureLines()}
 
-The installed platform must provide a super-admin Settings page at \`/admin/settings\`. Voting, event creation, anonymous posting, and anonymous commenting must be controllable there. Existing modules stay installed when a setting is off. Enforce settings at both the interface and database boundary; hiding a button is not enough. If this pinned release lacks one of those controls, add the smallest safe database-backed control and test both states before deployment.
+The installed platform must provide a super-admin Settings page at \`/admin/settings\`. Voting, event creation, anonymous posting, and anonymous commenting must be controllable there. Existing modules stay installed when a setting is off. Enforce settings at both the interface and database boundary; hiding a button is not enough. This pinned release already provides those controls. Verify them before deployment. If any control is missing, stop and report a source integrity or version mismatch; do not create a per-installation fork or improvise replacement controls.
 
 Use the release's safe defaults for the first launch. After deployment, show me \`/admin/settings\` and explain in plain English that I can turn available participation and feature settings on or off there. Optional email alerts may remain unconfigured without disabling stored bug reports.
 
