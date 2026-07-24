@@ -4,10 +4,19 @@
 
 Create your community launcher:
 
-- Added a free public `/create` wizard that turns plain-English community identity, locality, audience, operating defaults, and explicit launch-feature choices into one tailored AI launch brief.
+- Added a free public `/create` wizard that turns plain-English community identity, locality, audience, and organizer details into one tailored AI launch brief.
 - Pinned generated instructions to the current stable Local Community Platform release, kept credentials out of the launcher, and included a recovery brief for fresh agent sessions.
 - Added public navigation entry points, browser-local progress recovery, capability and safety gates, and a launch definition that requires the homepage, organizer login, and a real member invitation to work.
 - Replaced the developer-facing **Public locale** question with the plain-language **Platform Language** field and let the setup agent infer regional formatting from language and country.
+- Removed launch-time feature selection: every built module is installed, while the generated handoff guides non-technical organizers through new owner-controlled Supabase and Vercel accounts one action at a time.
+- Explicitly rejected OAuth and one-click provider provisioning so the organizer creates and owns every external account and credential.
+
+Super-admin settings:
+
+- Added one super-admin-only `/admin/settings` surface for Voting, event creation, anonymous posting, signed-out posting, anonymous commenting, and anonymous replies.
+- Moved existing post participation switches out of post moderation and moved Voting availability out of vote management so community-level controls live in one predictable place.
+- Added a database-backed event-creation switch that preserves existing event management while blocking new event inserts even when a stale or bypassed client still shows the form.
+- Restricted Voting availability changes to super admins while preserving public and member database enforcement.
 
 Performance:
 
