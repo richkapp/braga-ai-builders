@@ -16,6 +16,7 @@ import { communityConfig } from '../config/community';
       <a class="nav-link" href="/events">Events</a>
       <VotingFeatureLink className="nav-link" client:load />
       <a class="nav-link" href="/members">Members</a>
+      <a class="rounded-full border border-limewash/45 px-4 py-2 text-sm font-bold text-limewash transition hover:border-limewash hover:bg-limewash hover:text-ink-950" href="/create">Create</a>
       <AuthStatus client:load />
     </div>
 
@@ -26,6 +27,7 @@ import { communityConfig } from '../config/community';
         <a class="mobile-nav-link" href="/events">Events</a>
         <VotingFeatureLink className="mobile-nav-link" client:load />
         <a class="mobile-nav-link" href="/members">Members</a>
+        <a class="mobile-nav-link text-limewash" href="/create">Create your community</a>
         <AuthStatus client:load />
       </div>
     </details>
