@@ -79,7 +79,7 @@ export const EMPTY_COMMUNITY_LAUNCHER_ANSWERS: CommunityLauncherAnswers = {
   audience: '',
   organizerName: '',
   country: '',
-  locale: 'en-GB',
+  locale: 'English',
   timeZone: 'Europe/Lisbon',
   features: {
     posts: null,
@@ -90,6 +90,17 @@ export const EMPTY_COMMUNITY_LAUNCHER_ANSWERS: CommunityLauncherAnswers = {
     bugEmail: null,
   },
 };
+
+export function platformLanguageFromStoredValue(value: string) {
+  const trimmed = value.trim();
+  const localeCode = /^([a-z]{2,3})(?:[-_][a-z]{2,4})?$/i.exec(trimmed);
+  if (!localeCode) return trimmed;
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'language' }).of(localeCode[1].toLowerCase()) ?? trimmed;
+  } catch {
+    return trimmed;
+  }
+}
 
 function clean(value: string, maxLength = 600) {
   return value.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength);
@@ -119,7 +130,7 @@ function communityProfile(answers: CommunityLauncherAnswers) {
     `- Intended members: ${clean(answers.audience)}`,
     `- Organizer/operator: ${clean(answers.organizerName)}`,
     `- Country: ${clean(answers.country)}`,
-    `- Locale: ${clean(answers.locale, 30)}`,
+    `- Platform language: ${clean(answers.locale, 30)}`,
     `- Time zone: ${clean(answers.timeZone, 80)}`,
   ].join('\n');
 }
@@ -133,7 +144,7 @@ export function validateCommunityAnswers(answers: CommunityLauncherAnswers) {
   if (!clean(answers.audience)) errors.push('Describe who the community is for.');
   if (!clean(answers.organizerName)) errors.push('Add the organizer or operator name.');
   if (!clean(answers.country)) errors.push('Add the country where the community operates.');
-  if (!clean(answers.locale)) errors.push('Add the public locale.');
+  if (!clean(answers.locale)) errors.push('Choose the platform language.');
   if (!clean(answers.timeZone)) errors.push('Add the community time zone.');
   if (LAUNCHER_FEATURES.some((feature) => answers.features[feature.id] === null)) {
     errors.push('Answer Yes or Not now for every launch feature.');
@@ -201,7 +212,7 @@ After cloning, read \`AGENTS.md\`, \`README.md\`, and \`docs/self-hosting.md\` b
 
 1. **Preflight** — Confirm the source tag, Bun and Node versions, clean install, tests, and build. Stop on a failed gate.
 2. **Hero image** — Ask me for the hero image only after the source is available locally. Check its format, dimensions, crop, attribution, and public-use permission before adding it.
-3. **Community identity** — Apply the approved name, locality, purpose, audience, organizer, locale, time zone, homepage copy, labels, and legal placeholders. Ask me to approve public copy and review the legal templates.
+3. **Community identity** — Apply the approved name, locality, purpose, audience, organizer, platform language, time zone, homepage copy, labels, and legal placeholders. Infer the correct regional formatting from the platform language and country. Ask me to approve public copy and review the legal templates.
 4. **Feature state** — Enable only the features marked YES. Keep every NOT NOW feature installed but disabled. Test navigation and ordinary actions in both states.
 5. **Source ownership** — Put the configured app in my own GitHub repository without secrets, Braga production values, or private invitation URLs.
 6. **Supabase** — Guide me through creating my own project, linking it, applying the owned migration chain, configuring exact Auth redirect URLs, and deploying the required Edge Functions. Do not recreate policies manually.

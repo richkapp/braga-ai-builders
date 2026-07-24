@@ -14,6 +14,7 @@ import {
   LAUNCHER_FEATURES,
   buildCommunityLaunchPrompt,
   buildCommunityRecoveryPrompt,
+  platformLanguageFromStoredValue,
   validateCommunityAnswers,
   type CommunityFeatureId,
   type CommunityLauncherAnswers,
@@ -50,6 +51,7 @@ function restoreAnswers(value: unknown): CommunityLauncherAnswers | null {
   for (const field of ['communityName', 'location', 'purpose', 'audience', 'organizerName', 'country', 'locale', 'timeZone'] as TextField[]) {
     if (typeof candidate[field] === 'string') restored[field] = candidate[field].slice(0, 600);
   }
+  restored.locale = platformLanguageFromStoredValue(restored.locale);
 
   for (const feature of LAUNCHER_FEATURES) {
     const choice = features[feature.id];
@@ -78,7 +80,7 @@ function errorsForStep(step: StepId, answers: CommunityLauncherAnswers) {
     return [
       missing(answers.organizerName) ? 'Add the organizer or operator name.' : '',
       missing(answers.country) ? 'Add the country where the community operates.' : '',
-      missing(answers.locale) ? 'Add the public locale.' : '',
+      missing(answers.locale) ? 'Choose the platform language.' : '',
       missing(answers.timeZone) ? 'Add the community time zone.' : '',
     ].filter(Boolean);
   }
@@ -283,7 +285,7 @@ export default function CreateCommunityLauncher() {
             <div className="mt-8 grid gap-6 sm:grid-cols-2">
               <label className="block sm:col-span-2"><span className="label">Organizer or operator name</span><input className={inputClass} maxLength={120} value={answers.organizerName} onChange={(event) => updateField('organizerName', event.target.value)} placeholder="Your name or organizing team" autoComplete="name" /></label>
               <label className="block"><span className="label">Country</span><input className={inputClass} maxLength={80} value={answers.country} onChange={(event) => updateField('country', event.target.value)} placeholder="Portugal" autoComplete="country-name" /></label>
-              <label className="block"><span className="label">Public locale</span><input className={inputClass} maxLength={30} value={answers.locale} onChange={(event) => updateField('locale', event.target.value)} placeholder="en-GB" /></label>
+              <label className="block"><span className="label">Platform Language</span><input className={inputClass} maxLength={30} value={answers.locale} onChange={(event) => updateField('locale', event.target.value)} placeholder="English" /></label>
               <label className="block sm:col-span-2"><span className="label">Time zone</span><input className={inputClass} maxLength={80} value={answers.timeZone} onChange={(event) => updateField('timeZone', event.target.value)} placeholder="Europe/Lisbon" /></label>
             </div>
           </div>

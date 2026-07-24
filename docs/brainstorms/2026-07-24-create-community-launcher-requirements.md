@@ -69,7 +69,7 @@ The platform may complement WhatsApp, Discord, Facebook, Signal, email, or other
 **Community intake**
 
 - R8. The flow uses one plain-language decision per screen and explains unfamiliar tools only when they become relevant.
-- R9. The intake captures the community's name, locality, purpose, intended members, organizer identity, country, locale, and time zone.
+- R9. The intake captures the community's name, locality, purpose, intended members, organizer identity, country, platform language, and time zone.
 - R10. The intake captures enough source material to draft a tagline, short description, homepage message, and community-specific labels without inventing factual claims.
 - R11. The organizer reviews the generated community summary before the launch brief is created.
 - R12. The launcher does not request the hero image; the tailored launch brief instructs the AI to request it later.
@@ -105,7 +105,7 @@ The platform may complement WhatsApp, Discord, Facebook, Signal, email, or other
 - R33. The AI explains what each provider does before asking the organizer to create or configure it.
 - R34. The AI distinguishes browser-safe values from secrets and keeps secrets out of tracked source, launcher state, screenshots, and public output.
 - R35. The AI asks before paid upgrades, public deployment, custom-domain changes, DNS changes, or replacing an existing community link.
-- R36. The AI applies the organizer-approved identity, homepage language, locale, time zone, legal placeholders, hero image, and feature choices to the installation.
+- R36. The AI applies the organizer-approved identity, platform language, regional formatting, time zone, legal placeholders, hero image, and feature choices to the installation.
 - R37. The AI asks the organizer to review generated public copy and legal templates before public launch.
 - R38. The AI applies the platform's owned migration chain and deployment configuration rather than recreating database rules manually.
 - R39. The AI configures only the external services required by the core launch and features selected **Yes**.

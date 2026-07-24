@@ -5,6 +5,7 @@ import {
   LAUNCHER_FEATURES,
   buildCommunityLaunchPrompt,
   buildCommunityRecoveryPrompt,
+  platformLanguageFromStoredValue,
   validateCommunityAnswers,
   type CommunityLauncherAnswers,
 } from '../src/lib/createCommunityLauncher';
@@ -17,7 +18,7 @@ const completeAnswers: CommunityLauncherAnswers = {
   audience: 'Makers, craftspeople, students, and curious neighbours.',
   organizerName: 'Rita Costa',
   country: 'Portugal',
-  locale: 'en-GB',
+  locale: 'English',
   timeZone: 'Europe/Lisbon',
   features: {
     posts: true,
@@ -36,6 +37,8 @@ describe('create-community launch brief', () => {
     expect(COMMUNITY_PLATFORM_RELEASE.tag).toBe('v0.2.0');
     expect(prompt).toContain('Riverside Makers');
     expect(prompt).toContain('Coimbra, Portugal');
+    expect(prompt).toContain('- Platform language: English');
+    expect(prompt).not.toContain('- Locale:');
     expect(prompt).toContain(COMMUNITY_PLATFORM_RELEASE.url);
     expect(prompt).toContain(`git clone --branch ${COMMUNITY_PLATFORM_RELEASE.tag}`);
     expect(prompt).toContain('- Posts and discussions: YES — launch enabled');
@@ -79,6 +82,12 @@ describe('create-community launch brief', () => {
     ]);
   });
 
+  test('turns legacy locale codes into plain-language platform languages', () => {
+    expect(platformLanguageFromStoredValue('en-GB')).toBe('English');
+    expect(platformLanguageFromStoredValue('pt-PT')).toBe('Portuguese');
+    expect(platformLanguageFromStoredValue('Spanish')).toBe('Spanish');
+  });
+
   test('ships as a client-side public wizard with a visible site entry point', async () => {
     const [page, launcher, nav, footer] = await Promise.all([
       readFile('src/pages/create.astro', 'utf8'),
@@ -90,6 +99,8 @@ describe('create-community launch brief', () => {
     expect(page).toContain('CreateCommunityLauncher client:load');
     expect(page).toContain('Give your local community');
     expect(page).toContain('href="#community-launcher"');
+    expect(launcher).toContain('Platform Language');
+    expect(launcher).not.toContain('Public locale');
     expect(launcher).toContain("const STORAGE_KEY = 'local-community-launcher-v1'");
     expect(launcher).toContain("{ id: 'features', label: 'Features' }");
     expect(launcher).toContain('Copy launch brief');
