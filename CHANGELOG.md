@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Pinned the community launcher to Local Community Platform `v0.3.0`, where the complete super-admin Settings control plane ships in the stable source instead of being recreated per installation.
+
 Create your community launcher:
 
 - Added a free public `/create` wizard that turns plain-English community identity, locality, audience, and organizer details into one tailored AI launch brief.
