@@ -9,6 +9,7 @@ Create your community launcher v2:
 - Added current OS-specific setup prompts for ChatGPT/Codex, Claude/Claude Code, and Gemini/Google Antigravity, plus an honest fallback for Perplexity and other browser-only tools.
 - Added a complete non-secret helper handoff and nine source-pinned installation stages with one prompt at a time, diagnostic prompts, locked progress, **Site live**, and **Community ready** proof milestones.
 - Added pure route, prompt, recovery, migration, and component regression coverage, plus end-to-end browser checks for every route on desktop and mobile.
+- Kept **Create your community** in the footer without promoting it in the primary desktop or mobile navigation.
 
 - Pinned the community launcher to Local Community Platform `v0.3.0`, where the complete super-admin Settings control plane ships in the stable source instead of being recreated per installation.
 
