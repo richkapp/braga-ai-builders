@@ -173,7 +173,7 @@ describe('create-community launcher v2', () => {
     expect(launcher).toContain('type="file"');
     expect(launcher).not.toContain('fetch(');
     expect(launcher).not.toContain('sendBeacon');
-    expect(nav.match(/href="\/create"/g)).toHaveLength(2);
+    expect(nav).not.toContain('href="/create"');
     expect(footer).toContain('href="/create"');
   });
 });
