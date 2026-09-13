@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Removed the creator coffee donation link from the shared site footer; platform attribution and navigation are unchanged.
+
 Create your community launcher v2:
 
 - Replaced the capable-agent checkbox with behavior-based routing for technical organizers, local coding agents, autonomous agents, and browser-only AI users.
