@@ -368,8 +368,8 @@ describe('launch frontend contracts', () => {
     expect(footer).toContain('Local Community Platform');
     expect(footer).toContain('an open-source platform for local communities.');
     expect(footer).toContain('text-limewash underline');
-    expect(footer).toContain('https://buymeacoffee.com/richkapp');
-    expect(footer).toContain('☕️ buy the creator a coffee');
+    expect(footer).not.toContain('buymeacoffee.com');
+    expect(footer).not.toMatch(/buy the creator a coffee/i);
     expect(footer).not.toContain('View on GitHub');
     expect(footer).toContain('BugReportLauncher client:visible');
     expect(footer).not.toContain('Source code');
